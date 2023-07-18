@@ -95,7 +95,7 @@ function plugin:access(plugin_conf)
 
   local response, err = httpc:request_uri("http://localhost:8001", {
     method = "GET",
-    path = "/",
+    path = "/services",
     body = json.encode(body),
     headers = {
       ["User-Agent"] = "the-middleman/" .. version,
@@ -107,11 +107,11 @@ function plugin:access(plugin_conf)
   })
 
   if err then
-    kong.log(err)
+    kong.log("Error: " .. err)
   end
 
   if response then
-    kong.log(response)
+    kong.log("Response: " .. response.body)
   end
 
 
