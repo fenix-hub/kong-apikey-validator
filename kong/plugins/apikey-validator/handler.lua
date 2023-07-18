@@ -10,7 +10,8 @@
 -- on when exactly they are invoked and what limitations each handler has.
 ---------------------------------------------------------------------------------------------
 
-
+local http = require "resty.http"
+local json = require "lunajson"
 
 local plugin = {
   PRIORITY = 1000, -- set the plugin priority, which determines plugin execution order
@@ -68,6 +69,51 @@ function plugin:access(plugin_conf)
   -- your custom code here
   kong.log.inspect(plugin_conf)   -- check the logs for a pretty-printed config!
   kong.service.request.set_header(plugin_conf.request_header, "this is on a request")
+
+  local httpc = http.new()
+  -- httpc:set_timeouts(conf.connect_timeout, conf.send_timeout, conf.read_timeout)
+
+  local body = {}
+
+  -- if conf.forward_path then
+  --   body["path"] = kong.request.get_path()
+  -- end
+
+  -- if conf.forward_query then
+  --   body["query"] = kong.request.get_query()
+  -- end
+
+  -- if conf.forward_headers then
+  --   body["headers"] = kong.request.get_headers()
+  -- end
+
+  -- if conf.forward_body then
+  --   body["body"] = kong.request.get_body()
+  -- end
+
+  local version = 1.0
+
+  local response, err = httpc:request_uri("http://localhost:8001", {
+    method = "GET",
+    path = "/",
+    body = json.encode(body),
+    headers = {
+      ["User-Agent"] = "the-middleman/" .. version,
+      ["Content-Type"] = "application/json",
+      -- ["X-Forwarded-Host"] = kong.request.get_host(),
+      -- ["X-Forwarded-Path"] = kong.request.get_path(),
+      -- ["X-Forwarded-Query"] = kong.request.get_query(),
+    }
+  })
+
+  if err then
+    kong.log(err)
+  end
+
+  if response then
+    kong.log(response)
+  end
+
 
 end --]]
 
