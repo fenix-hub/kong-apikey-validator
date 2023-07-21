@@ -106,7 +106,11 @@ function plugin:access(conf)
   -- the key might be expired, revoked, etc.
   -- if the key manager service returns a 401, then the APIKey is invalid
   if response.status == 401 then
-    kong.response.exit(401, { message = "Invalid API key" })
+    kong.response.exit(401, { message = "API Key expired or revoked" })
+  end
+
+  if response.status == 400 then
+    kong.response.exit(400, { message = "API Key not valid" })
   end
 
   -- if the key manager service returns a 500, then something went wrong
