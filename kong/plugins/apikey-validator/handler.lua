@@ -70,10 +70,76 @@ function plugin:access(plugin_conf)
   kong.log.inspect(plugin_conf)   -- check the logs for a pretty-printed config!
   kong.service.request.set_header(plugin_conf.request_header, "this is on a request")
 
-  local httpc = http.new()
-  -- httpc:set_timeouts(conf.connect_timeout, conf.send_timeout, conf.read_timeout)
+  -- make sure the request headers contains an APIKey in the X-API-Key header
+  local apikey = kong.request.get_header(plugin_conf.request_header)
+  if not apikey then
+    kong.response.exit(401, { message = "No API key found in request" })
+  end
 
-  local body = {}
+  -- [validation phase]
+  -- make an http request to the key manager service to validate the APIKey
+  -- the apikey is in the form {PREFIX}.{TOKEN}, extract the PREFIX and TOKEN
+  local prefix, payload = apikey:match("([^.]*)%.(.*)")
+
+  local httpc = http.new()
+  httpc:set_timeouts(conf.connect_timeout, conf.send_timeout, conf.read_timeout)
+
+  local body = { prefix = prefix, payload = payload }
+  local response, err = httpc:request_uri("http://localhost:8000/key-manager", {
+    method = "POST",
+    path = "/keys/verify",
+    body = json.encode(body),
+    headers = {
+      ["User-Agent"] = "apikey-validator/1.0", -- .. version,
+      ["Content-Type"] = "application/json",
+      ["X-Forwarded-Host"] = kong.request.get_host(),
+      ["X-Forwarded-Path"] = kong.request.get_path(),
+      ["X-Forwarded-Query"] = kong.request.get_query(),
+    }
+  })
+
+  -- the key might be expired, revoked, etc.
+  -- if the key manager service returns a 401, then the APIKey is invalid
+  if response.status == 401 then
+    kong.response.exit(401, { message = "Invalid API key" })
+  end
+
+  -- if the key manager service returns a 500, then something went wrong
+  if response.status == 500 then
+    kong.response.exit(500, { message = "Internal server error" })
+  end
+
+  -- if the key manager service returns a 200, then the APIKey is valid
+  if response.status == 200 then
+    kong.log("APIKey is valid")
+  end
+
+  -- [rate limiting phase]
+  -- make an http request to the rate limiter service to get the counters for the APIKey
+  local body = { prefix = prefix }
+  local response, err = httpc:request_uri("http://localhost:8000/rate-limiter", {
+    method = "POST",
+    path = "/rate-limiter",
+    body = json.encode(body),
+    headers = {
+      ["User-Agent"] = "apikey-validator/1.0", -- .. version,
+      ["Content-Type"] = "application/json",
+      ["X-Forwarded-Host"] = kong.request.get_host(),
+      ["X-Forwarded-Path"] = kong.request.get_path(),
+      ["X-Forwarded-Query"] = kong.request.get_query(),
+    }
+  })
+
+  -- the response body contains a list of counters for the APIKey, one for each rate limit, e.g.: [{ id, name, max_value, current_value }]
+  -- for each counter, check if the current_value is greater than the max_value
+  -- if so, then the rate limit has been exceeded, and the request should be rejected
+  local counters = json.decode(response.body)
+  for _, counter in ipairs(counters) do
+    if counter.current_value >= counter.max_value then
+      kong.response.exit(429, { message = "Rate limit exceeded" })
+      kong.log("Rate limit exceeded: " .. counter.name .. " (" .. counter.current_value .. "/" .. counter.max_value .. ")")
+    end
+  end
 
   -- if conf.forward_path then
   --   body["path"] = kong.request.get_path()
@@ -89,22 +155,22 @@ function plugin:access(plugin_conf)
 
   -- if conf.forward_body then
   --   body["body"] = kong.request.get_body()
-  -- end
+  -- endl
 
-  local version = 1.0
-
-  local response, err = httpc:request_uri("http://localhost:8001", {
-    method = "GET",
-    path = "/services",
-    body = json.encode(body),
-    headers = {
-      ["User-Agent"] = "the-middleman/" .. version,
-      ["Content-Type"] = "application/json",
-      -- ["X-Forwarded-Host"] = kong.request.get_host(),
-      -- ["X-Forwarded-Path"] = kong.request.get_path(),
-      -- ["X-Forwarded-Query"] = kong.request.get_query(),
-    }
-  })
+  --local version = 1.0
+  --
+  --local response, err = httpc:request_uri("http://localhost:8001", {
+  --  method = "GET",
+  --  path = "/services",
+  --  body = json.encode(body),
+  --  headers = {
+  --    ["User-Agent"] = "the-middleman/" .. version,
+  --    ["Content-Type"] = "application/json",
+  --    ["X-Forwarded-Host"] = kong.request.get_host(),
+  --    ["X-Forwarded-Path"] = kong.request.get_path(),
+  --    ["X-Forwarded-Query"] = kong.request.get_query(),
+  --  }
+  --})
 
   if err then
     kong.log("Error: " .. err)
