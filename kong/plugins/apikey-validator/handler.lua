@@ -41,7 +41,7 @@ end --]]
 -- IMPORTANT: during the `certificate` phase neither `route`, `service`, nor `consumer`
 -- will have been identified, hence this handler will only be executed if the plugin is
 -- configured as a global plugin!
-function plugin:certificate(plugin_conf)
+function plugin:certificate(conf)
 
   -- your custom code here
   kong.log.debug("saying hi from the 'certificate' handler")
@@ -54,7 +54,7 @@ end --]]
 -- IMPORTANT: during the `rewrite` phase neither `route`, `service`, nor `consumer`
 -- will have been identified, hence this handler will only be executed if the plugin is
 -- configured as a global plugin!
-function plugin:rewrite(plugin_conf)
+function plugin:rewrite(conf)
 
   -- your custom code here
   kong.log.debug("saying hi from the 'rewrite' handler")
@@ -64,14 +64,14 @@ end --]]
 
 
 -- runs in the 'access_by_lua_block'
-function plugin:access(plugin_conf)
+function plugin:access(conf)
 
   -- your custom code here
-  kong.log.inspect(plugin_conf)   -- check the logs for a pretty-printed config!
-  kong.service.request.set_header(plugin_conf.request_header, "this is on a request")
+  kong.log.inspect(conf)   -- check the logs for a pretty-printed config!
+  kong.service.request.set_header(conf.request_header, "this is on a request")
 
   -- make sure the request headers contains an APIKey in the X-API-Key header
-  local apikey = kong.request.get_header(plugin_conf.request_header)
+  local apikey = kong.request.get_header(conf.request_header)
   if not apikey then
     kong.response.exit(401, { message = "No API key found in request" })
   end
@@ -85,7 +85,7 @@ function plugin:access(plugin_conf)
   httpc:set_timeouts(conf.connect_timeout, conf.send_timeout, conf.read_timeout)
 
   local body = { prefix = prefix, payload = payload }
-  local response, err = httpc:request_uri("http://localhost:8000/key-manager", {
+  local response, err = httpc:request_uri("http://192.168.42.28:7000/key-manager", {
     method = "POST",
     path = "/keys/verify",
     body = json.encode(body),
@@ -116,30 +116,30 @@ function plugin:access(plugin_conf)
 
   -- [rate limiting phase]
   -- make an http request to the rate limiter service to get the counters for the APIKey
-  local body = { prefix = prefix }
-  local response, err = httpc:request_uri("http://localhost:8000/rate-limiter", {
-    method = "POST",
-    path = "/rate-limiter",
-    body = json.encode(body),
-    headers = {
-      ["User-Agent"] = "apikey-validator/1.0", -- .. version,
-      ["Content-Type"] = "application/json",
-      ["X-Forwarded-Host"] = kong.request.get_host(),
-      ["X-Forwarded-Path"] = kong.request.get_path(),
-      ["X-Forwarded-Query"] = kong.request.get_query(),
-    }
-  })
-
-  -- the response body contains a list of counters for the APIKey, one for each rate limit, e.g.: [{ id, name, max_value, current_value }]
-  -- for each counter, check if the current_value is greater than the max_value
-  -- if so, then the rate limit has been exceeded, and the request should be rejected
-  local counters = json.decode(response.body)
-  for _, counter in ipairs(counters) do
-    if counter.current_value >= counter.max_value then
-      kong.response.exit(429, { message = "Rate limit exceeded" })
-      kong.log("Rate limit exceeded: " .. counter.name .. " (" .. counter.current_value .. "/" .. counter.max_value .. ")")
-    end
-  end
+  --local body = { prefix = prefix }
+  --local response, err = httpc:request_uri("http://localhost:8000/rate-limiter", {
+  --  method = "POST",
+  --  path = "/rate-limiter",
+  --  body = json.encode(body),
+  --  headers = {
+  --    ["User-Agent"] = "apikey-validator/1.0", -- .. version,
+  --    ["Content-Type"] = "application/json",
+  --    ["X-Forwarded-Host"] = kong.request.get_host(),
+  --    ["X-Forwarded-Path"] = kong.request.get_path(),
+  --    ["X-Forwarded-Query"] = kong.request.get_query(),
+  --  }
+  --})
+  --
+  ---- the response body contains a list of counters for the APIKey, one for each rate limit, e.g.: [{ id, name, max_value, current_value }]
+  ---- for each counter, check if the current_value is greater than the max_value
+  ---- if so, then the rate limit has been exceeded, and the request should be rejected
+  --local counters = json.decode(response.body)
+  --for _, counter in ipairs(counters) do
+  --  if counter.current_value >= counter.max_value then
+  --    kong.response.exit(429, { message = "Rate limit exceeded" })
+  --    kong.log("Rate limit exceeded: " .. counter.name .. " (" .. counter.current_value .. "/" .. counter.max_value .. ")")
+  --  end
+  --end
 
   -- if conf.forward_path then
   --   body["path"] = kong.request.get_path()
@@ -185,16 +185,16 @@ end --]]
 
 
 -- runs in the 'header_filter_by_lua_block'
-function plugin:header_filter(plugin_conf)
+function plugin:header_filter(conf)
 
   -- your custom code here, for example;
-  kong.response.set_header(plugin_conf.response_header, "this is on the response")
+  kong.response.set_header(conf.response_header, "this is on the response")
 
 end --]]
 
 
 --[[ runs in the 'body_filter_by_lua_block'
-function plugin:body_filter(plugin_conf)
+function plugin:body_filter(conf)
 
   -- your custom code here
   kong.log.debug("saying hi from the 'body_filter' handler")
@@ -203,7 +203,7 @@ end --]]
 
 
 --[[ runs in the 'log_by_lua_block'
-function plugin:log(plugin_conf)
+function plugin:log(conf)
 
   -- your custom code here
   kong.log.debug("saying hi from the 'log' handler")
