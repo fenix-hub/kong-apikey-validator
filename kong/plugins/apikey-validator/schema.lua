@@ -16,7 +16,7 @@ local schema = {
         fields = {
           { method = { type = "string", default = "POST", one_of = { "POST", "GET", }, }, },
           { url = typedefs.url({ required = true }) },
-          { path = { type = "string", default = "/auth", }, },
+          { path = { type = "string" }, },
 
           { connect_timeout = { type = "number", default = 5000, }, },
           { send_timeout = { type = "number", default = 10000, }, },

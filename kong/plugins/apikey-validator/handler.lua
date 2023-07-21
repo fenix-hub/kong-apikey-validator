@@ -68,7 +68,7 @@ function plugin:access(conf)
 
   -- your custom code here
   kong.log.inspect(conf)   -- check the logs for a pretty-printed config!
-  kong.service.request.set_header(conf.request_header, "this is on a request")
+  --kong.service.request.set_header(conf.request_header, "this is on a request")
 
   -- make sure the request headers contains an APIKey in the X-API-Key header
   local apikey = kong.request.get_header(conf.request_header)
@@ -85,9 +85,9 @@ function plugin:access(conf)
   httpc:set_timeouts(conf.connect_timeout, conf.send_timeout, conf.read_timeout)
 
   local body = { prefix = prefix, payload = payload }
-  local response, err = httpc:request_uri("http://192.168.42.28:7000/key-manager", {
+  local response, err = httpc:request_uri(conf.url, {
     method = "POST",
-    path = "/keys/verify",
+    path = conf.path,
     body = json.encode(body),
     headers = {
       ["User-Agent"] = "apikey-validator/1.0", -- .. version,
