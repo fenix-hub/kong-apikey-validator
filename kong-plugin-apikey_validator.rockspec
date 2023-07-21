@@ -1,11 +1,11 @@
 local plugin_name = "apikey-validator"
 local package_name = "kong-plugin-" .. plugin_name
-local package_version = "0.2.0"
+local package_version = "0.2.1"
 local rockspec_revision = "1"
 
 local github_account_name = "fenix-hub"
 local github_repo_name = "kong-apikey-validator"
-local git_checkout = package_version == "dev" and "master" or package_version
+local git_checkout = "master"
 
 
 package = package_name
