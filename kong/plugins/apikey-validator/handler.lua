@@ -89,9 +89,9 @@ function plugin:access(conf)
   kong.log("Making request " .. conf.method .. " " .. conf.url .. conf.path .. " with body " .. json.encode(body))
 
   local response, err = httpc:request_uri(conf.url, {
-    method = "POST",
+    method = conf.method,
     path = conf.path,
-    body = json.encode(body),
+    body = body,
     headers = {
       ["User-Agent"] = "apikey-validator/1.0", -- .. version,
       ["Content-Type"] = "application/json",
@@ -110,7 +110,7 @@ function plugin:access(conf)
   end
 
   -- if the key manager service returns a 500, then something went wrong
-  if response.status == 500 then
+  if response.status == 500 or err then
     kong.response.exit(500, { message = "Internal server error" })
   end
 
@@ -176,15 +176,6 @@ function plugin:access(conf)
   --    ["X-Forwarded-Query"] = kong.request.get_query(),
   --  }
   --})
-
-  if err then
-    kong.log("Error: " .. err)
-  end
-
-  if response then
-    kong.log("Response: " .. response.body)
-  end
-
 
 end --]]
 
