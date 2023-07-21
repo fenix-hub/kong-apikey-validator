@@ -7,9 +7,9 @@ function EmptySchema:new()
 end
 
 return {
-  ["/apikey-validator"] = {
+  ["/apikey-validator/generate"] = {
     methods = {
-      schema = EmptySchema:new(),
+      schema = nil,
       GET = function(self)
         local request = self.req
         kong.log("request: " .. request)
