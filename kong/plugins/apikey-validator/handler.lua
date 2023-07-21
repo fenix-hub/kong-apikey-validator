@@ -91,7 +91,7 @@ function plugin:access(conf)
   local response, err = httpc:request_uri(conf.url, {
     method = conf.method,
     path = conf.path,
-    body = body,
+    body = json.encode(body),
     headers = {
       ["User-Agent"] = "apikey-validator/1.0", -- .. version,
       ["Content-Type"] = "application/json",
