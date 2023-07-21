@@ -14,6 +14,13 @@ local schema = {
         -- The 'config' record is the custom part of the plugin schema
         type = "record",
         fields = {
+          { method = { type = "string", default = "POST", one_of = { "POST", "GET", }, }, },
+          { url = typedefs.url({ required = true }) },
+          { path = { type = "string", default = "/auth", }, },
+
+          { connect_timeout = { type = "number", default = 5000, }, },
+          { send_timeout = { type = "number", default = 10000, }, },
+          { read_timeout = {  type = "number", default = 10000, }, },
           -- a standard defined field (typedef), with some customizations
           { request_header = typedefs.header_name {
               required = true,
