@@ -1,10 +1,7 @@
-local endpoints = require "kong.api.endpoints"
-local json = require "lunajson"
-
 return {
-  ["/api-keys"] = {
+  ["/apikey-validator"] = {
     methods = {
-      resource = "api-keys",
+      resource = "apikey-validator",
       GET = function(self)
         local request = self.req
         kong.log("request: " .. request)
