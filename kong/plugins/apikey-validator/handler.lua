@@ -115,7 +115,7 @@ function plugin:access(conf)
   end
 
   -- if the key manager service returns a 200, then the APIKey is valid
-  if response.status >= 200 and response.stats < 300 then
+  if response.status >= 200 and response.status < 300 then
     kong.log("APIKey is valid")
   end
 
