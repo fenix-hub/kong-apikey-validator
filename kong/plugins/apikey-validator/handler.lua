@@ -85,6 +85,9 @@ function plugin:access(conf)
   httpc:set_timeouts(conf.connect_timeout, conf.send_timeout, conf.read_timeout)
 
   local body = { prefix = prefix, payload = payload }
+
+  kong.log("Making request " .. conf.method .. " " .. conf.url .. conf.path .. " with body " .. json.encode(body))
+
   local response, err = httpc:request_uri(conf.url, {
     method = "POST",
     path = conf.path,
@@ -98,6 +101,8 @@ function plugin:access(conf)
     }
   })
 
+  kong.log("Response: " .. response.body .. " " .. response.status)
+
   -- the key might be expired, revoked, etc.
   -- if the key manager service returns a 401, then the APIKey is invalid
   if response.status == 401 then
@@ -110,7 +115,7 @@ function plugin:access(conf)
   end
 
   -- if the key manager service returns a 200, then the APIKey is valid
-  if response.status == 200 then
+  if response.status >= 200 and response.stats < 300 then
     kong.log("APIKey is valid")
   end
 
