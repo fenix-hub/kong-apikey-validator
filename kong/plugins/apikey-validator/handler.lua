@@ -143,9 +143,10 @@ function plugin:access(conf)
 
   -- call redis cache
   local limits_amount = redis_client:get(limits_index .. ":limits_amount");
+  kong.log("limits_amount: " .. limits_amount);
   local limits = {};
   for i = 0, limits_amount do
-    limits[i+1] = redis_client:hgetall(limits_index .. i);
+    limits[i+1] = redis_client:hgetall(limits_index .. ":" .. i);
   end;
 
   kong.log(json.encode(limits));
