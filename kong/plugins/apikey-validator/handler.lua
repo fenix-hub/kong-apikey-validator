@@ -76,12 +76,16 @@ local function switch(t)
   return t
 end
 
+local function increment_limit(client, idx, amount)
+  local res = client:hincrby(idx, "c", amount);
+  kong.log("Incrementing: " .. idx .. " ".. res);
+end
+
 -- handle different types of rate limiting logics based on the limit parameter
 --it can be CALL, MONTHS, CHARACTERS, using a switch statement based on a table
 local rate_limiting_logics = {
   ["CALL"] = function(limit, client)
-    local res = client:hincrby(limit.idx, limit.c, 1);
-    kong.log("Incrementing: " .. limit.p .. " ".. res);
+    increment_limit(client, limit.idx, 1)
   end,
   ["MONTHS"] = function(limit, client)
     -- do something else
@@ -90,8 +94,7 @@ local rate_limiting_logics = {
     -- do something else
   end,
   default = function(limit, client)
-    local res = client:hincrby(limit.idx, limit.c, limit.i);
-    kong.log("Incrementing: " .. limit.p .. " ".. res);
+    increment_limit(client, limit.idx, limit.i)
   end,
 }
 
