@@ -7,6 +7,7 @@ return {
     methods = {
       GET = function(self)
         kong.log("GET /apikey/generate")
+        kong.log(credentials_schema)
         return kong.response.exit(200, { message = "GET /apikey/generate" })
       end,
     },
