@@ -15,4 +15,28 @@ return {
       end,
     },
   },
+  ["/apikey/validate/:prefix"] = {
+    schema = EmptySchema:new(),
+    methods = {
+      GET = function(self)
+        return kong.response.exit(200, { message = "OK" })
+      end,
+    },
+  },
+  ["/apikey/validate"] = {
+    schema = EmptySchema:new(),
+    methods = {
+      POST = function(self)
+        return kong.response.exit(200, { message = "OK" })
+      end,
+    },
+  },
+  ["/apikey/counters/reset"] = {
+    schema = EmptySchema:new(),
+    methods = {
+      POST = function(self)
+        return kong.response.exit(200, { message = "OK" })
+      end,
+    },
+  }
 }

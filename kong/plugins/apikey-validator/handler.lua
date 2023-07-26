@@ -103,7 +103,6 @@ function plugin:access(conf)
 
   -- your custom code here
   kong.log.inspect(conf)   -- check the logs for a pretty-printed config!
-  --kong.service.request.set_header(conf.request_header, "this is on a request")
 
   -- make sure the request headers contains an APIKey in the X-API-Key header
   local apikey = kong.request.get_header(conf.request_header)
@@ -121,16 +120,15 @@ function plugin:access(conf)
 
   local body = { prefix = prefix, payload = payload }
 
-  kong.log("Making request " .. conf.method .. " " .. conf.url .. conf.path .. " with body " .. json.encode(body))
-
   local headers = {
     ["User-Agent"] = "apikey-validator/1.0", -- .. version,
     ["Content-Type"] = "application/json",
-    ["X-Forwarded-Host"] = kong.request.get_host(),
-    ["X-Forwarded-Path"] = kong.request.get_path(),
-    ["X-Forwarded-Query"] = kong.request.get_query(),
+    ["X-Saatisfied-Forwarded-Host"] = kong.request.get_host(),
+    ["X-Saatisfied-Forwarded-Path"] = kong.request.get_path(),
+    ["X-Saatisfied-Forwarded-Query"] = kong.request.get_query(),
   }
 
+  kong.log("Making request " .. conf.method .. " " .. conf.url .. conf.path .. " with body " .. json.encode(body))
   local response, err = httpc:request_uri(conf.url, {
     method = conf.method,
     path = conf.path,
@@ -158,9 +156,9 @@ function plugin:access(conf)
   -- if the key manager service returns a 200, then the APIKey is valid
   if response.status >= 200 and response.status < 300 then
     kong.log("APIKey is valid")
-    kong.response.set_header("X-SAATISFIED-USER", "user")
-    kong.response.set_header("X-SAATISFIED-SERVICE", "service")
-    kong.response.set_header("X-SAATISFIED-PAYMENTCONF", "paymentconf")
+    kong.response.set_header("X-Saatisfied-User", "user")
+    kong.response.set_header("X-Saatisfied-Service", "service")
+    kong.response.set_header("X-Saatisfied-PaymentConfiguration", "paymentconf")
   end
 
   -- [rate limiting phase]
@@ -191,6 +189,7 @@ function plugin:access(conf)
     kong.log("limit: " .. i .. " " .. json.encode(limit))
     if tonumber(limit.c) >= tonumber(limit.m) then
       kong.log("Rate limit exceeded: " .. limit.p .. " (" .. limit.c .. "/" .. limit.m .. ")")
+      -- build some headers related to the rate limiting
       kong.response.exit(429, { message = "Rate limit exceeded" })
     -- else apply the rate limiting logic
     else
@@ -198,62 +197,6 @@ function plugin:access(conf)
     end
   end
 
-  -- make an http request to the rate limiter service to get the counters for the APIKey
-  --local body = { prefix = prefix }
-  --local response, err = httpc:request_uri("http://localhost:8000/rate-limiter", {
-  --  method = "POST",
-  --  path = "/rate-limiter",
-  --  body = json.encode(body),
-  --  headers = {
-  --    ["User-Agent"] = "apikey-validator/1.0", -- .. version,
-  --    ["Content-Type"] = "application/json",
-  --    ["X-Forwarded-Host"] = kong.request.get_host(),
-  --    ["X-Forwarded-Path"] = kong.request.get_path(),
-  --    ["X-Forwarded-Query"] = kong.request.get_query(),
-  --  }
-  --})
-  --
-  ---- the response body contains a list of counters for the APIKey, one for each rate limit, e.g.: [{ id, name, max_value, current_value }]
-  ---- for each counter, check if the current_value is greater than the max_value
-  ---- if so, then the rate limit has been exceeded, and the request should be rejected
-  --local counters = json.decode(response.body)
-  --for _, counter in ipairs(counters) do
-  --  if counter.current_value >= counter.max_value then
-  --    kong.response.exit(429, { message = "Rate limit exceeded" })
-  --    kong.log("Rate limit exceeded: " .. counter.name .. " (" .. counter.current_value .. "/" .. counter.max_value .. ")")
-  --  end
-  --end
-
-  -- if conf.forward_path then
-  --   body["path"] = kong.request.get_path()
-  -- end
-
-  -- if conf.forward_query then
-  --   body["query"] = kong.request.get_query()
-  -- end
-
-  -- if conf.forward_headers then
-  --   body["headers"] = kong.request.get_headers()
-  -- end
-
-  -- if conf.forward_body then
-  --   body["body"] = kong.request.get_body()
-  -- endl
-
-  --local version = 1.0
-  --
-  --local response, err = httpc:request_uri("http://localhost:8001", {
-  --  method = "GET",
-  --  path = "/services",
-  --  body = json.encode(body),
-  --  headers = {
-  --    ["User-Agent"] = "the-middleman/" .. version,
-  --    ["Content-Type"] = "application/json",
-  --    ["X-Forwarded-Host"] = kong.request.get_host(),
-  --    ["X-Forwarded-Path"] = kong.request.get_path(),
-  --    ["X-Forwarded-Query"] = kong.request.get_query(),
-  --  }
-  --})
   :: continue ::
 end --]]
 
