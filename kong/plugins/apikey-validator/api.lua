@@ -1,12 +1,12 @@
+local json = require "lunajson"
 
 local consumer_schema = kong.db.consumers.schema;
-local json = require "lunajson"
 
 return {
   ["/apikey/generate"] = {
     schema = consumer_schema,
     methods = {
-      GET = function(self, db)
+      GET = function(self, db, json)
         kong.log("GET /apikey/generate")
         kong.log(db)
         kong.log(json.decode(consumer_schema))
