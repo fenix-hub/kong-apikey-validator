@@ -63,13 +63,13 @@ function plugin:rewrite(conf)
 end --]]
 
 local function switch(t)
-  t.case = function (self,arg)
-    local f=self[arg] or self.default
+  t.case = function (self, arg1, arg2)
+    local f = self[arg1] or self.default
     if f then
       if type(f)=="function" then
-        f(arg,self)
+        f(arg1, arg2, self)
       else
-        error("case "..tostring(arg).." not a function")
+        error("case "..tostring(arg1).." not a function")
       end
     end
   end
@@ -79,16 +79,16 @@ end
 -- handle different types of rate limiting logics based on the limit parameter
 --it can be CALL, MONTHS, CHARACTERS, using a switch statement based on a table
 local rate_limiting_logics = {
-  ["CALL"] = function(arg)
-    kong.log("CALL")
+  ["CALL"] = function(arg1, arg2)
+    kong.log("CALL " .. arg2)
   end,
-  ["MONTHS"] = function(arg)
+  ["MONTHS"] = function(arg1, arg2)
     -- do something else
   end,
-  ["CHARACTERS"] = function(arg)
+  ["CHARACTERS"] = function(arg1, arg2)
     -- do something else
   end,
-  default = function(arg)
+  default = function(arg1, arg2)
     -- do something else
   end,
 }
@@ -98,7 +98,7 @@ function plugin:access(conf)
 
   local a = switch(rate_limiting_logics);
 
-  a:case("CALL")
+  a:case("CALL", "arg1")
 
 
   -- your custom code here
