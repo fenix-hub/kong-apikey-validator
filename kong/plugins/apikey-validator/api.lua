@@ -1,13 +1,14 @@
-local endpoints = require "kong.api.endpoints"
 
-local credentials_schema = kong.db.keyauth_credentials.schema
+local credentials_schema = kong.db.consumers.schema;
 
 return {
-  ["/consumers/:consumers/key-auth/"] = {
+  ["/apikey/generate"] = {
     schema = credentials_schema,
     methods = {
-      GET = endpoints.get_collection_endpoint(
-              credentials_schema, kong.db.keyauth_credentials),
+      GET = function(self)
+        kong.log("GET /apikey/generate")
+        return kong.response.exit(200, { message = "GET /apikey/generate" })
+      end,
     },
   },
 }
