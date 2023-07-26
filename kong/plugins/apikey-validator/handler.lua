@@ -62,7 +62,7 @@ function plugin:rewrite(conf)
 
 end --]]
 
-function switch(t)
+local function switch(t)
   t.case = function (self,x)
     local f=self[x] or self.default
     if f then
@@ -79,8 +79,8 @@ end
 -- runs in the 'access_by_lua_block'
 function plugin:access(conf)
 
-  a = switch {
-    [1] = function (x) print(x,10) end,
+  local a = switch {
+    [1] = function (x) kong.log(x,10) end,
     [2] = function (x) print(x,20) end,
     default = function (x) print(x,0) end,
   }
