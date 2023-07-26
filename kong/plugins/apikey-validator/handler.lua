@@ -133,7 +133,7 @@ function plugin:access(conf)
 
   -- connect to redis
   local redis_client = redis.connect(conf.redis_host, conf.redis_port)
-  if redis_client:ping() ~= "true" then
+  if redis_client:ping() ~= true then
     kong.log.err("Could not connect to redis")
     kong.response.exit(500, { message = "Internal server error" }, headers)
   end
