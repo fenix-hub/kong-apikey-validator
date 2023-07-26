@@ -63,11 +63,11 @@ function plugin:rewrite(conf)
 end --]]
 
 local function switch(t)
-  t.case = function (self, arg1, arg2)
+  t.case = function (self, arg1, arg2, arg3, arg4)
     local f = self[arg1] or self.default
     if f then
       if type(f)=="function" then
-        f(arg1, arg2, self)
+        f(arg2, arg3, arg4, self)
       else
         error("case "..tostring(arg1).." not a function")
       end
@@ -79,27 +79,23 @@ end
 -- handle different types of rate limiting logics based on the limit parameter
 --it can be CALL, MONTHS, CHARACTERS, using a switch statement based on a table
 local rate_limiting_logics = {
-  ["CALL"] = function(arg1, arg2)
-    kong.log("CALL " .. arg2)
+  ["CALL"] = function(key, limit, client)
+    local res = client:hincrby(key, limit.c, 1);
+    kong.log(res);
   end,
-  ["MONTHS"] = function(arg1, arg2)
+  ["MONTHS"] = function(key, limit, client)
     -- do something else
   end,
-  ["CHARACTERS"] = function(arg1, arg2)
+  ["CHARACTERS"] = function(key, limit, client)
     -- do something else
   end,
-  default = function(arg1, arg2)
-    -- do something else
+  default = function(key, limit, client)
+    client.hincrby(key, limit.c, limit.i)
   end,
 }
 
 -- runs in the 'access_by_lua_block'
 function plugin:access(conf)
-
-  local a = switch(rate_limiting_logics);
-
-  a:case("CALL", "arg1")
-
 
   -- your custom code here
   kong.log.inspect(conf)   -- check the logs for a pretty-printed config!
@@ -188,6 +184,9 @@ function plugin:access(conf)
     if limit.c >= limit.m then
       kong.response.exit(429, { message = "Rate limit exceeded" })
       kong.log("Rate limit exceeded: " .. limit.p .. " (" .. limit.c .. "/" .. limit.v .. ")")
+    -- else apply the rate limiting logic
+    else
+      switch(rate_limiting_logics):case(limit.p, limits_index, limit, redis_client)
     end
   end
 
