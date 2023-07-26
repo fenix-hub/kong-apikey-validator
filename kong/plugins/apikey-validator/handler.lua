@@ -139,13 +139,13 @@ function plugin:access(conf)
   end
 
   local namespace = conf.redis_apikey_namespace;
-  local limits_index = namespace + prefix;
+  local limits_index = namespace .. prefix;
 
   -- call redis cache
-  local limits_amount = redis_client:get(limits_index + ":limits_amount");
+  local limits_amount = redis_client:get(limits_index .. ":limits_amount");
   local limits = {};
   for i = 0, limits_amount do
-    limits[i+1] = redis_client:hgetall(limits_index + i);
+    limits[i+1] = redis_client:hgetall(limits_index .. i);
   end;
 
   kong.log(json.encode(limits));
