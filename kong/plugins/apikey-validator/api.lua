@@ -1,4 +1,7 @@
-local consumer_schema = kong.db.consumers.schema;
+local consumer_schema = {
+  name = "consumer",
+  fields = "two"
+};
 
 return {
   ["/apikey/generate"] = {
