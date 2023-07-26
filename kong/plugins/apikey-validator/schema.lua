@@ -18,9 +18,19 @@ local schema = {
           { url = typedefs.url({ required = true }) },
           { path = { type = "string" }, },
 
+          -- redis connection properties, including host, port, user and password
+          { redis_host = typedefs.host({ required = true }), },
+          { redis_port = typedefs.port({ required = true }), },
+          { redis_user = { type = "string", len_min = 0 }, },
+          { redis_password = { type = "string", len_min = 0 }, },
+
+          { redis_apikey_namespace = { type = "string", default = "apikey:"}, },
+
+          -- timeouts for connecting to the Validator server
           { connect_timeout = { type = "number", default = 5000, }, },
           { send_timeout = { type = "number", default = 10000, }, },
           { read_timeout = {  type = "number", default = 10000, }, },
+
           -- a standard defined field (typedef), with some customizations
           { request_header = typedefs.header_name {
               required = true,

@@ -28,6 +28,7 @@ description = {
 dependencies = {
     "lua >= 5.1",
     "lunajson >= 1.2.3-1",
+    "redis-lua >= scm-1",
 }
 
 
