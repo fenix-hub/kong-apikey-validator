@@ -1,4 +1,4 @@
-local consumer_schema = kong.db.apikey-validator.schema;
+local consumer_schema = require "kong.db.apikey-validator.schema";
 
 
 return {
