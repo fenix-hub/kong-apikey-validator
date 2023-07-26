@@ -141,11 +141,8 @@ function plugin:access(conf)
   local namespace = conf.redis_apikey_namespace;
   local limits_index = namespace .. prefix;
 
-  kong.log("limits_index: " .. limits_index)
-
   -- call redis cache
-  local limits_amount = redis_client:get(limits_index .. ":limits_amount");
-  kong.log("limits_amount: " .. limits_amount);
+  local limits_amount = redis_client:get(limits_index .. ":limits");
   local limits = {};
   for i = 0, limits_amount do
     limits[i+1] = redis_client:hgetall(limits_index .. ":" .. i);
