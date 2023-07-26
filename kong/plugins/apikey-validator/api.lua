@@ -11,7 +11,7 @@ return {
         kong.log(consumer_schema.fields.custom_id)
         kong.log(json.encode(consumer_schema.fields))
         kong.log(consumer_schema.name)
-        return kong.response.exit(200, { body = json.encode(consumer_schema.fields) }})
+        return kong.response.exit(200, { body = json.encode(consumer_schema.fields) })
       end,
     },
   },
