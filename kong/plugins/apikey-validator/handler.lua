@@ -148,7 +148,14 @@ function plugin:access(conf)
     limits[i+1] = redis_client:hgetall(limits_index .. ":" .. i);
   end;
 
-  kong.log(json.encode(limits));
+  -- check if the current_value is greater than the max_value
+  -- if so, then the rate limit has been exceeded, and the request should be rejected
+  for i, limit in ipairs(limits) do
+    if limit.c >= limit.m then
+      kong.response.exit(429, { message = "Rate limit exceeded" })
+      kong.log("Rate limit exceeded: " .. limit.p .. " (" .. limit.c .. "/" .. limit.v .. ")")
+    end
+  end
 
   -- make an http request to the rate limiter service to get the counters for the APIKey
   --local body = { prefix = prefix }
