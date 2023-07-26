@@ -189,9 +189,9 @@ function plugin:access(conf)
   -- if so, then the rate limit has been exceeded, and the request should be rejected
   for i, limit in ipairs(limits) do
     kong.log("limit: " .. i .. " " .. json.encode(limit))
-    if limit.c >= limit.m then
+    if tonumber(limit.c) >= tonumber(limit.m) then
+      kong.log("Rate limit exceeded: " .. limit.p .. " (" .. limit.c .. "/" .. limit.m .. ")")
       kong.response.exit(429, { message = "Rate limit exceeded" })
-      kong.log("Rate limit exceeded: " .. limit.p .. " (" .. limit.c .. "/" .. limit.v .. ")")
     -- else apply the rate limiting logic
     else
       switch(rate_limiting_logics):case(limit.p, limit, redis_client)
