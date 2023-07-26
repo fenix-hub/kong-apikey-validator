@@ -81,7 +81,7 @@ end
 local rate_limiting_logics = {
   ["CALL"] = function(key, limit, client)
     local res = client:hincrby(key, limit.c, 1);
-    kong.log(res);
+    kong.log("Incrementing: " .. limit.p .. " ".. res);
   end,
   ["MONTHS"] = function(key, limit, client)
     -- do something else
@@ -90,7 +90,8 @@ local rate_limiting_logics = {
     -- do something else
   end,
   default = function(key, limit, client)
-    client:hincrby(key, limit.c, limit.i)
+    local res = client:hincrby(key, limit.c, limit.i);
+    kong.log("Incrementing: " .. limit.p .. " ".. res);
   end,
 }
 
@@ -176,7 +177,7 @@ function plugin:access(conf)
   kong.log("limits_amount: " .. limits_amount)
 
   local limits = {};
-  for i = 0, limits_amount do
+  for i = 0, limits_amount-1 do
     limits[i+1] = redis_client:hgetall(limits_index .. ":" .. i);
   end;
 
