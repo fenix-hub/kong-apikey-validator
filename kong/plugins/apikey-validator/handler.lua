@@ -188,7 +188,7 @@ function plugin:access(conf)
   -- check if the current_value is greater than the max_value
   -- if so, then the rate limit has been exceeded, and the request should be rejected
   for i, limit in ipairs(limits) do
-    kong.log("limit: " .. limit.p)
+    kong.log("limit: " .. i .. " " .. json.encode(limit))
     if limit.c >= limit.m then
       kong.response.exit(429, { message = "Rate limit exceeded" })
       kong.log("Rate limit exceeded: " .. limit.p .. " (" .. limit.c .. "/" .. limit.v .. ")")
