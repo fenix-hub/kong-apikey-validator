@@ -1,20 +1,13 @@
--- workaround
-local EmptySchema = {}
-function EmptySchema:new()
-  local self = {}
-  function self.each_field(...) return function() end end
-  return self
-end
+local endpoints = require "kong.api.endpoints"
+
+local credentials_schema = kong.db.keyauth_credentials.schema
 
 return {
-  ["/apikey-validator/generate"] = {
+  ["/consumers/:consumers/key-auth/"] = {
+    schema = credentials_schema,
     methods = {
-      schema = nil,
-      GET = function(self)
-        local request = self.req
-        kong.log("request: " .. request)
-        return kong.response.exit(200, { message = "Rate limit exceeded" })
-      end,
+      GET = endpoints.get_collection_endpoint(
+              credentials_schema, kong.db.keyauth_credentials),
     },
   },
 }

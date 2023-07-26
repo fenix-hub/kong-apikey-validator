@@ -88,17 +88,19 @@ function plugin:access(conf)
 
   kong.log("Making request " .. conf.method .. " " .. conf.url .. conf.path .. " with body " .. json.encode(body))
 
+  local headers = {
+    ["User-Agent"] = "apikey-validator/1.0", -- .. version,
+    ["Content-Type"] = "application/json",
+    ["X-Forwarded-Host"] = kong.request.get_host(),
+    ["X-Forwarded-Path"] = kong.request.get_path(),
+    ["X-Forwarded-Query"] = kong.request.get_query(),
+  }
+
   local response, err = httpc:request_uri(conf.url, {
     method = conf.method,
     path = conf.path,
     body = json.encode(body),
-    headers = {
-      ["User-Agent"] = "apikey-validator/1.0", -- .. version,
-      ["Content-Type"] = "application/json",
-      ["X-Forwarded-Host"] = kong.request.get_host(),
-      ["X-Forwarded-Path"] = kong.request.get_path(),
-      ["X-Forwarded-Query"] = kong.request.get_query(),
-    }
+    headers = headers,
   })
 
   kong.log("Response: " .. response.body .. " " .. response.status)
@@ -106,21 +108,24 @@ function plugin:access(conf)
   -- the key might be expired, revoked, etc.
   -- if the key manager service returns a 401, then the APIKey is invalid
   if response.status == 401 then
-    kong.response.exit(401, { message = "API Key expired or revoked" })
+    kong.response.exit(401, { message = "API Key expired or revoked" }, headers)
   end
 
   if response.status == 400 then
-    kong.response.exit(400, { message = "API Key not valid" })
+    kong.response.exit(400, { message = "API Key not valid" }, headers)
   end
 
   -- if the key manager service returns a 500, then something went wrong
   if response.status == 500 or err then
-    kong.response.exit(500, { message = "Internal server error" })
+    kong.response.exit(500, { message = "Internal server error" }, headers)
   end
 
   -- if the key manager service returns a 200, then the APIKey is valid
   if response.status >= 200 and response.status < 300 then
     kong.log("APIKey is valid")
+    kong.response.set_header("X-SAATISFIED-USER", "user")
+    kong.response.set_header("X-SAATISFIED-SERVICE", "service")
+    kong.response.set_header("X-SAATISFIED-PAYMENTCONF", "paymentconf")
   end
 
   -- [rate limiting phase]
@@ -180,7 +185,7 @@ function plugin:access(conf)
   --    ["X-Forwarded-Query"] = kong.request.get_query(),
   --  }
   --})
-
+  :: continue ::
 end --]]
 
 
