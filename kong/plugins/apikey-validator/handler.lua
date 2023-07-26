@@ -62,10 +62,53 @@ function plugin:rewrite(conf)
 
 end --]]
 
-
+function switch(t)
+  t.case = function (self,x)
+    local f=self[x] or self.default
+    if f then
+      if type(f)=="function" then
+        f(x,self)
+      else
+        error("case "..tostring(x).." not a function")
+      end
+    end
+  end
+  return t
+end
 
 -- runs in the 'access_by_lua_block'
 function plugin:access(conf)
+
+  a = switch {
+    [1] = function (x) print(x,10) end,
+    [2] = function (x) print(x,20) end,
+    default = function (x) print(x,0) end,
+  }
+
+  a:case(1)  --> 1 10
+
+  -- handle different types of rate limiting logics based on the limit parameter
+  --it can be CALL, MONTHS, CHARACTERS, using a switch statement based on a table
+  local rate_limiting_logics = {
+    ["CALL"] = function()
+      -- do something
+    end,
+    ["MONTHS"] = function()
+      -- do something else
+    end,
+    ["CHARACTERS"] = function()
+      -- do something else
+    end,
+  }
+
+  local rate_limiting_logic = rate_limiting_logics[conf.limit]
+  if rate_limiting_logic then
+    rate_limiting_logic()
+  else
+    -- do something else
+  end
+
+
 
   -- your custom code here
   kong.log.inspect(conf)   -- check the logs for a pretty-printed config!
