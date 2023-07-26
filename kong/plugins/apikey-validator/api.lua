@@ -1,7 +1,11 @@
-local consumer_schema = {
-  name = "consumer",
-  fields = "two"
-};
+function bar()
+  return {
+    name = "consumers",
+    fields = "two",
+  }
+end
+
+local consumer_schema = bar()
 
 return {
   ["/apikey/generate"] = {
