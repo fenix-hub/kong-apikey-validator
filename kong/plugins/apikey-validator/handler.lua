@@ -63,11 +63,11 @@ function plugin:rewrite(conf)
 end --]]
 
 local function switch(t)
-  t.case = function (self, arg1, arg2, arg3, arg4)
+  t.case = function (self, arg1, arg2, arg3)
     local f = self[arg1] or self.default
     if f then
       if type(f)=="function" then
-        f(arg2, arg3, arg4, self)
+        f(arg2, arg3, self)
       else
         error("case "..tostring(arg1).." not a function")
       end
@@ -79,18 +79,18 @@ end
 -- handle different types of rate limiting logics based on the limit parameter
 --it can be CALL, MONTHS, CHARACTERS, using a switch statement based on a table
 local rate_limiting_logics = {
-  ["CALL"] = function(key, limit, client)
-    local res = client:hincrby(key, limit.c, 1);
+  ["CALL"] = function(limit, client)
+    local res = client:hincrby(limit.idx, limit.c, 1);
     kong.log("Incrementing: " .. limit.p .. " ".. res);
   end,
-  ["MONTHS"] = function(key, limit, client)
+  ["MONTHS"] = function(limit, client)
     -- do something else
   end,
-  ["CHARACTERS"] = function(key, limit, client)
+  ["CHARACTERS"] = function(limit, client)
     -- do something else
   end,
-  default = function(key, limit, client)
-    local res = client:hincrby(key, limit.c, limit.i);
+  default = function(limit, client)
+    local res = client:hincrby(limit.idx, limit.c, limit.i);
     kong.log("Incrementing: " .. limit.p .. " ".. res);
   end,
 }
@@ -179,6 +179,7 @@ function plugin:access(conf)
   local limits = {};
   for i = 0, limits_amount-1 do
     limits[i+1] = redis_client:hgetall(limits_index .. ":" .. i);
+    limits[i+1]["idx"] = limits_index .. ":" .. i;
   end;
 
   -- check if the current_value is greater than the max_value
@@ -190,7 +191,7 @@ function plugin:access(conf)
       kong.log("Rate limit exceeded: " .. limit.p .. " (" .. limit.c .. "/" .. limit.v .. ")")
     -- else apply the rate limiting logic
     else
-      switch(rate_limiting_logics):case(limit.p, limits_index, limit, redis_client)
+      switch(rate_limiting_logics):case(limit.p, limit, redis_client)
     end
   end
 
