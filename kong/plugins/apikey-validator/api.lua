@@ -7,11 +7,9 @@ return {
   ["/apikey/generate"] = {
     schema = consumer_schema,
     methods = {
-      GET = function(self, db)
-        kong.log("GET /apikey/generate")
-        kong.log(db)
-        kong.log(json.encode(consumer_schema))
-        return kong.response.exit(200, { message = "GET /apikey/generate" })
+      GET = function(self)
+        kong.log(consumer.custom_id)
+        return kong.response.exit(200, consumer_schema)
       end,
     },
   },
