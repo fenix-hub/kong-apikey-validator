@@ -1,13 +1,13 @@
 
-local credentials_schema = kong.db.consumers.schema;
+local consumer_schema = kong.db.consumers.schema;
 
 return {
   ["/apikey/generate"] = {
-    schema = credentials_schema,
+    schema = consumer_schema,
     methods = {
       GET = function(self)
         kong.log("GET /apikey/generate")
-        kong.log(credentials_schema)
+        kong.log(consumer_schema.table)
         return kong.response.exit(200, { message = "GET /apikey/generate" })
       end,
     },

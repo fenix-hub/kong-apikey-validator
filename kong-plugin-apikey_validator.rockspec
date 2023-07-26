@@ -40,3 +40,11 @@ build = {
     ["kong.plugins."..plugin_name..".api"] = "kong/plugins/"..plugin_name.."/api.lua",
   }
 }
+
+build = {
+  type = "builtin",
+  modules = {
+    ["kong.plugins."..plugin_name..".handler"] = "kong/plugins/"..plugin_name.."/handler.lua",
+    ["kong.plugins."..plugin_name..".schema"] = "kong/plugins/"..plugin_name.."/schema.lua",
+  }
+}
