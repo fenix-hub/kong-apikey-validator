@@ -141,7 +141,7 @@ function plugin:access(conf)
     x[i+1] = redis_client:hgetall("apikey:56yu:"..i);
   end;
 
-  kong.log(x);
+  kong.log(json.encode(x));
 
   -- make an http request to the rate limiter service to get the counters for the APIKey
   --local body = { prefix = prefix }
