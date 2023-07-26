@@ -96,7 +96,7 @@ local rate_limiting_logics = {
 -- runs in the 'access_by_lua_block'
 function plugin:access(conf)
 
-  local a = switch { rate_limiting_logics };
+  local a = switch(rate_limiting_logics);
 
   a:case("CALL")
 
