@@ -173,6 +173,8 @@ function plugin:access(conf)
 
   -- call redis cache
   local limits_amount = redis_client:get(limits_index .. ":limits");
+  kong.log("limits_amount: " .. limits_amount)
+
   local limits = {};
   for i = 0, limits_amount do
     limits[i+1] = redis_client:hgetall(limits_index .. ":" .. i);
@@ -181,6 +183,7 @@ function plugin:access(conf)
   -- check if the current_value is greater than the max_value
   -- if so, then the rate limit has been exceeded, and the request should be rejected
   for i, limit in ipairs(limits) do
+    kong.log("limit: " .. limit.p)
     if limit.c >= limit.m then
       kong.response.exit(429, { message = "Rate limit exceeded" })
       kong.log("Rate limit exceeded: " .. limit.p .. " (" .. limit.c .. "/" .. limit.v .. ")")
