@@ -90,7 +90,7 @@ local rate_limiting_logics = {
     -- do something else
   end,
   default = function(key, limit, client)
-    client.hincrby(key, limit.c, limit.i)
+    client:hincrby(key, limit.c, limit.i)
   end,
 }
 
