@@ -12,6 +12,7 @@
 
 local http = require "resty.http"
 local json = require "lunajson"
+local redis = require "redis"
 
 local plugin = {
   PRIORITY = 1000, -- set the plugin priority, which determines plugin execution order
@@ -129,6 +130,19 @@ function plugin:access(conf)
   end
 
   -- [rate limiting phase]
+
+  -- call redis cache
+  local redis_client = redis.connect("192.168.42.24", 6378)
+  kong.log(redis_client:ping())
+
+  local limits_amount = redis_client:get("apikey:56yu");
+  local x = {};
+  for i = 0, limits_amount do
+    x[i+1] = redis_client:hgetall("apikey:56yu:"..i);
+  end;
+
+  kong.log(x);
+
   -- make an http request to the rate limiter service to get the counters for the APIKey
   --local body = { prefix = prefix }
   --local response, err = httpc:request_uri("http://localhost:8000/rate-limiter", {

@@ -11,7 +11,7 @@ return {
     schema = EmptySchema:new(),
     methods = {
       GET = function(self)
-        kong.log(self)
+        kong.log(table.tostring(self))
         return kong.response.exit(200, { message = "OK" })
       end,
     },
