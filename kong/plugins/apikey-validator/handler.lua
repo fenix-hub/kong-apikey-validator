@@ -16,8 +16,8 @@ local http = require "resty.http"
 local json = require "lunajson"
 local redis = require "redis"
 
-local switch = require "switch"
-local rate_limiting_logics = require "rate-limiting"
+local switch = require "kong.plugins.apikey-validator.switch"
+local rate_limiting_logics = require "kong.plugins.apikey-validator.rate-limiting"
 
 local ApikeyValidator = {
   PRIORITY = 1000, -- set the ApikeyValidator priority, which determines ApikeyValidator execution order
