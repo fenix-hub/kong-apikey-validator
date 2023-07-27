@@ -1,6 +1,6 @@
 local plugin_name = "apikey-validator"
 local package_name = "kong-plugin-" .. plugin_name
-local package_version = "0.3.2"
+local package_version = "0.4.0"
 local rockspec_revision = "1"
 
 local github_account_name = "fenix-hub"
@@ -29,6 +29,7 @@ dependencies = {
     "lua >= 5.1",
     "lunajson >= 1.2.3-1",
     "redis-lua >= 2.0.4-1",
+    "luajwt >= 1.3-4",
 }
 
 
