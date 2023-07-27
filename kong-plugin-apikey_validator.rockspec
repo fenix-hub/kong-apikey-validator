@@ -39,5 +39,7 @@ build = {
     ["kong.plugins."..plugin_name..".handler"] = "kong/plugins/"..plugin_name.."/handler.lua",
     ["kong.plugins."..plugin_name..".schema"] = "kong/plugins/"..plugin_name.."/schema.lua",
     ["kong.plugins."..plugin_name..".api"] = "kong/plugins/"..plugin_name.."/api.lua",
+    ["kong.plugins."..plugin_name..".switch"] = "kong/plugins/"..plugin_name.."/switch.lua",
+    ["kong.plugins."..plugin_name..".rate-limiting"] = "kong/plugins/"..plugin_name.."/rate-limiting.lua",
   }
 }
