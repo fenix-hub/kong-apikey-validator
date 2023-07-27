@@ -41,7 +41,7 @@ return {
         end
 
         -- get the consumer id from the JWT token
-        kong.log(jwt.uuid)
+        kong.log(jwt.claims.uuid)
 
         -- set headers
         local headers = {
