@@ -1,7 +1,7 @@
 local http = require "resty.http"
 local json = require "lunajson"
 local redis = require "redis"
-local jwt = require "luajwt"
+-- local jwt = require "luajwt"
 
 local conf = require "kong.plugins.apikey-validator.schema"
 
@@ -18,6 +18,9 @@ return {
     schema = EmptySchema:new(),
     methods = {
       GET = function(self)
+
+        kong.log(kong.ctx.shared.authenticated_jwt_token)
+
         -- get the Authorization header from the request
         local auth_header = self.req.headers["Authorization"]
 
@@ -32,14 +35,14 @@ return {
           return kong.response.exit(401, { message = "Unauthorized" })
         end
 
-        -- decode the JWT token
-        local decoded, err = jwt.decode(token, nil, false)
-        if err then
-          return kong.response.exit(401, { message = "Unauthorized" })
-        end
-
-        -- get the consumer id from the JWT token
-        kong.log(json.decode(decoded))
+        ---- decode the JWT token
+        --local decoded, err = jwt.decode(token, nil, false)
+        --if err then
+        --  return kong.response.exit(401, { message = "Unauthorized" })
+        --end
+        --
+        ---- get the consumer id from the JWT token
+        --kong.log(json.decode(decoded))
 
         return kong.response.exit(200, { message = "OK" })
       end,
