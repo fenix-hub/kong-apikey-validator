@@ -19,7 +19,7 @@ return {
     methods = {
       GET = function(self)
 
-        kong.log(kong.ctx.shared.authenticated_jwt_token)
+        kong.log(json.decode(kong.ctx.shared))
 
         -- get the Authorization header from the request
         local auth_header = self.req.headers["Authorization"]
