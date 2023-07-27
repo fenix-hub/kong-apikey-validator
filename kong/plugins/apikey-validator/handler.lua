@@ -1,5 +1,5 @@
--- If you're not sure your plugin is executing, uncomment the line below and restart Kong
--- then it will throw an error which indicates the plugin is being loaded at least.
+-- If you're not sure your ApikeyValidator is executing, uncomment the line below and restart Kong
+-- then it will throw an error which indicates the ApikeyValidator is being loaded at least.
 
 --assert(ngx.get_phase() == "timer", "The world is coming to an end!")
 
@@ -10,16 +10,19 @@
 -- on when exactly they are invoked and what limitations each handler has.
 ---------------------------------------------------------------------------------------------
 
+-- TODO: user https://github.com/Kong/kong/blob/master/kong/plugins/key-auth/handler.lua as a reference
+
 local http = require "resty.http"
 local json = require "lunajson"
 local redis = require "redis"
 
-local plugin = {
-  PRIORITY = 1000, -- set the plugin priority, which determines plugin execution order
-  VERSION = "0.1", -- version in X.Y.Z format. Check hybrid-mode compatibility requirements.
+local switch = require "switch"
+local rate_limiting_logics = require "rate-limiting"
+
+local ApikeyValidator = {
+  PRIORITY = 1000, -- set the ApikeyValidator priority, which determines ApikeyValidator execution order
+  VERSION = "0.3.0", -- version in X.Y.Z format. Check hybrid-mode compatibility requirements.
 }
-
-
 
 -- do initialization here, any module level code runs in the 'init_by_lua_block',
 -- before worker processes are forked. So anything you add here will run once,
@@ -29,7 +32,7 @@ local plugin = {
 
 -- handles more initialization, but AFTER the worker process has been forked/created.
 -- It runs in the 'init_worker_by_lua_block'
-function plugin:init_worker()
+function ApikeyValidator:init_worker()
 
   -- your custom code here
   kong.log.debug("saying hi from the 'init_worker' handler")
@@ -40,9 +43,9 @@ end --]]
 
 --[[ runs in the 'ssl_certificate_by_lua_block'
 -- IMPORTANT: during the `certificate` phase neither `route`, `service`, nor `consumer`
--- will have been identified, hence this handler will only be executed if the plugin is
--- configured as a global plugin!
-function plugin:certificate(conf)
+-- will have been identified, hence this handler will only be executed if the ApikeyValidator is
+-- configured as a global ApikeyValidator!
+function ApikeyValidator:certificate(conf)
 
   -- your custom code here
   kong.log.debug("saying hi from the 'certificate' handler")
@@ -53,82 +56,41 @@ end --]]
 
 --[[ runs in the 'rewrite_by_lua_block'
 -- IMPORTANT: during the `rewrite` phase neither `route`, `service`, nor `consumer`
--- will have been identified, hence this handler will only be executed if the plugin is
--- configured as a global plugin!
-function plugin:rewrite(conf)
+-- will have been identified, hence this handler will only be executed if the ApikeyValidator is
+-- configured as a global ApikeyValidator!
+function ApikeyValidator:rewrite(conf)
 
   -- your custom code here
   kong.log.debug("saying hi from the 'rewrite' handler")
 
 end --]]
 
-local function switch(t)
-  t.case = function (self, arg1, arg2, arg3)
-    local f = self[arg1] or self.default
-    if f then
-      if type(f)=="function" then
-        f(arg2, arg3, self)
-      else
-        error("case "..tostring(arg1).." not a function")
-      end
-    end
-  end
-  return t
-end
-
-local function increment_limit(client, idx, amount)
-  local res = client:hincrby(idx, "c", amount);
-  kong.log("Incrementing: " .. idx .. " ".. res);
-end
-
--- handle different types of rate limiting logics based on the limit parameter
---it can be CALL, MONTHS, CHARACTERS, using a switch statement based on a table
-local rate_limiting_logics = {
-  ["CALL"] = function(limit, client)
-    increment_limit(client, limit.idx, 1)
-  end,
-  ["MONTHS"] = function(limit, client)
-    -- do something else
-  end,
-  ["CHARACTERS"] = function(limit, client)
-    -- do something else
-  end,
-  default = function(limit, client)
-    increment_limit(client, limit.idx, limit.i)
-  end,
-}
+-- TODO: set response headers based on kong.service... and kong.constants
 
 -- runs in the 'access_by_lua_block'
-function plugin:access(conf)
-
-  -- your custom code here
-  kong.log.inspect(conf)   -- check the logs for a pretty-printed config!
+function ApikeyValidator:access(conf)
 
   -- make sure the request headers contains an APIKey in the X-API-Key header
   local apikey = kong.request.get_header(conf.request_header)
   if not apikey then
-    kong.response.exit(401, { message = "No API key found in request" })
+    return kong.response.error(401, { message = "No API key found in request" })
   end
 
   -- [validation phase]
-  -- make an http request to the key manager service to validate the APIKey
-  -- the apikey is in the form {PREFIX}.{TOKEN}, extract the PREFIX and TOKEN
-  local prefix, payload = apikey:match("([^.]*)%.(.*)")
-
   local httpc = http.new()
   httpc:set_timeouts(conf.connect_timeout, conf.send_timeout, conf.read_timeout)
 
-  local body = { prefix = prefix, payload = payload }
+  local body = { apiKey = apikey, serviceId = "SERVICE_ID_HERE" }
 
   local headers = {
-    ["User-Agent"] = "apikey-validator/1.0", -- .. version,
+    ["User-Agent"] = "apikey-validator/" .. ApikeyValidator.VERSION,
     ["Content-Type"] = "application/json",
     ["X-Saatisfied-Forwarded-Host"] = kong.request.get_host(),
     ["X-Saatisfied-Forwarded-Path"] = kong.request.get_path(),
     ["X-Saatisfied-Forwarded-Query"] = kong.request.get_query(),
   }
 
-  kong.log("Making request " .. conf.method .. " " .. conf.url .. conf.path .. " with body " .. json.encode(body))
+  kong.log.debug("Making request " .. conf.method .. " " .. conf.url .. conf.path)
   local response, err = httpc:request_uri(conf.url, {
     method = conf.method,
     path = conf.path,
@@ -136,26 +98,26 @@ function plugin:access(conf)
     headers = headers,
   })
 
-  kong.log("Response: " .. response.body .. " " .. response.status)
+  kong.log.debug("Response: " .. response.body .. " " .. response.status)
 
   -- the key might be expired, revoked, etc.
   -- if the key manager service returns a 401, then the APIKey is invalid
   if response.status == 401 then
-    kong.response.exit(401, { message = "API Key expired or revoked" }, headers)
+    return kong.response.error(401, { message = "API Key expired or revoked" }, headers)
   end
 
   if response.status == 400 then
-    kong.response.exit(400, { message = "API Key not valid" }, headers)
+    return kong.response.error(400, { message = "API Key not valid" }, headers)
   end
 
   -- if the key manager service returns a 500, then something went wrong
   if response.status == 500 or err then
-    kong.response.exit(500, { message = "Internal server error" }, headers)
+    return kong.response.error(500, { message = "Internal server error" }, headers)
   end
 
   -- if the key manager service returns a 200, then the APIKey is valid
   if response.status >= 200 and response.status < 300 then
-    kong.log("APIKey is valid")
+    kong.log.info("APIKey is valid")
     kong.response.set_header("X-Saatisfied-User", "user")
     kong.response.set_header("X-Saatisfied-Service", "service")
     kong.response.set_header("X-Saatisfied-PaymentConfiguration", "paymentconf")
@@ -167,7 +129,7 @@ function plugin:access(conf)
   local redis_client = redis.connect(conf.redis_host, conf.redis_port)
   if redis_client:ping() ~= true then
     kong.log.err("Could not connect to redis")
-    kong.response.exit(500, { message = "Internal server error" }, headers)
+    return kong.response.error(500, { message = "Internal server error" }, headers)
   end
 
   local namespace = conf.redis_apikey_namespace;
@@ -175,7 +137,7 @@ function plugin:access(conf)
 
   -- call redis cache
   local limits_amount = redis_client:get(limits_index .. ":limits");
-  kong.log("limits_amount: " .. limits_amount)
+  kong.log.debug("limits_amount: " .. limits_amount)
 
   local limits = {};
   for i = 0, limits_amount-1 do
@@ -186,11 +148,11 @@ function plugin:access(conf)
   -- check if the current_value is greater than the max_value
   -- if so, then the rate limit has been exceeded, and the request should be rejected
   for i, limit in ipairs(limits) do
-    kong.log("limit: " .. i .. " " .. json.encode(limit))
+    kong.log.info("limit: " .. i .. " " .. json.encode(limit))
     if tonumber(limit.c) >= tonumber(limit.m) then
-      kong.log("Rate limit exceeded: " .. limit.p .. " (" .. limit.c .. "/" .. limit.m .. ")")
+      kong.log.info("Rate limit exceeded: " .. limit.p .. " (" .. limit.c .. "/" .. limit.m .. ")")
       -- build some headers related to the rate limiting
-      kong.response.exit(429, { message = "Rate limit exceeded" })
+      return kong.response.error(429, { message = "Rate limit exceeded" })
     -- else apply the rate limiting logic
     else
       switch(rate_limiting_logics):case(limit.p, limit, redis_client)
@@ -202,7 +164,7 @@ end --]]
 
 
 -- runs in the 'header_filter_by_lua_block'
-function plugin:header_filter(conf)
+function ApikeyValidator:header_filter(conf)
 
   -- your custom code here, for example;
   kong.response.set_header(conf.response_header, "this is on the response")
@@ -211,7 +173,7 @@ end --]]
 
 
 --[[ runs in the 'body_filter_by_lua_block'
-function plugin:body_filter(conf)
+function ApikeyValidator:body_filter(conf)
 
   -- your custom code here
   kong.log.debug("saying hi from the 'body_filter' handler")
@@ -220,7 +182,7 @@ end --]]
 
 
 --[[ runs in the 'log_by_lua_block'
-function plugin:log(conf)
+function ApikeyValidator:log(conf)
 
   -- your custom code here
   kong.log.debug("saying hi from the 'log' handler")
@@ -228,5 +190,5 @@ function plugin:log(conf)
 end --]]
 
 
--- return our plugin object
-return plugin
+-- return our ApikeyValidator object
+return ApikeyValidator

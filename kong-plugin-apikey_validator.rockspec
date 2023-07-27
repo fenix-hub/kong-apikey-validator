@@ -1,6 +1,6 @@
 local plugin_name = "apikey-validator"
 local package_name = "kong-plugin-" .. plugin_name
-local package_version = "0.2.13"
+local package_version = "0.3.0"
 local rockspec_revision = "1"
 
 local github_account_name = "fenix-hub"
@@ -39,16 +39,5 @@ build = {
     ["kong.plugins."..plugin_name..".handler"] = "kong/plugins/"..plugin_name.."/handler.lua",
     ["kong.plugins."..plugin_name..".schema"] = "kong/plugins/"..plugin_name.."/schema.lua",
     ["kong.plugins."..plugin_name..".api"] = "kong/plugins/"..plugin_name.."/api.lua",
-  }
-}
-
-build = {
-  type = "builtin",
-  modules = {
-    ["kong.plugins."..plugin_name..".handler"] = "kong/plugins/"..plugin_name.."/handler.lua",
-    ["kong.plugins."..plugin_name..".schema"] = "kong/plugins/"..plugin_name.."/schema.lua",
-    ["kong.plugins."..plugin_name..".api"] = "kong/plugins/"..plugin_name.."/api.lua",
-    -- dao
-    ["kong.plugins."..plugin_name..".daos"] = "kong/plugins/"..plugin_name.."/daos.lua",
   }
 }
