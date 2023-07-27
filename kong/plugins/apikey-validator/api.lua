@@ -33,21 +33,34 @@ return {
           return kong.response.exit(401, { message = "Unauthorized" })
         end
 
-        ---- decode the JWT token
-        --local decoded, err = jwt.decode(token, nil, false)
-        --if err then
-        --  return kong.response.exit(401, { message = "Unauthorized" })
-        --end
-        --
-        ---- get the consumer id from the JWT token
-
         -- decode token to get roles claim
         local jwt, err = jwt_decoder:new(token)
         if err then
           -- return false, {status = 401, message = "Bad token; " .. tostring(err)}
           return kong.response.exit(401, { message = "Bad token; " .. tostring(err)})
         end
-        kong.log(jwt)
+
+        -- get the consumer id from the JWT token
+        kong.log(jwt.uuid)
+
+        -- set headers
+        local headers = {
+          ["User-Agent"] = "apikey-validator/" .. "1.0.0",
+          ["Content-Type"] = "application/json",
+          ["X-Saatisfied-Forwarded-Host"] = kong.request.get_host(),
+          ["X-Saatisfied-Forwarded-Path"] = kong.request.get_path(),
+          ["X-Saatisfied-Forwarded-Query"] = kong.request.get_query(),
+        }
+
+        local body = { serviceId = kong.req,params_post.serviceId, purchaseId = kong.req,params_post.purchaseId }
+
+        kong.log("Making request " .. conf.method .. " " .. conf.url .. conf.path .. " " .. json.encode(body))
+        local response, err = httpc:request_uri(conf.url, {
+          method = conf.method,
+          path = "/apikey/generate",
+          body = json.encode(body),
+          headers = headers,
+        })
 
         return kong.response.exit(200, { message = "OK" })
       end,
