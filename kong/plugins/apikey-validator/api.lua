@@ -66,10 +66,15 @@ return {
           ["X-Saatisfied-Forwarded-Query"] = kong.request.get_query(),
         }
 
+        kong.log(self.params)
+        kong.log(self.args.post)
+
         local body = { serviceId = self.req.params_post.serviceId, purchaseId = self.req.params_post.purchaseId }
 
+        kong.log(json.encode(body))
+
         kong.log("Making request " .. vconf.method .. " " .. vconf.url .. vconf.path .. " " .. json.encode(body))
-        local response, err = httpc:request_uri(vconf.url, {
+        local response, err = http:request_uri(vconf.url, {
           method = vconf.method,
           path = "/apikey/generate",
           body = json.encode(body),
