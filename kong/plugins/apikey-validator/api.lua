@@ -76,6 +76,11 @@ return {
           headers = headers,
         })
 
+        if err then
+          kong.log.err("Error: " .. err)
+          return kong.response.exit(500, { message = "Internal server error" }, headers)
+        end
+
         return kong.response.exit(response.status, { message = "OK", remote = response.body })
       end,
     },
