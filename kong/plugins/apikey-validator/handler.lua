@@ -183,7 +183,7 @@ function ApikeyValidator:header_filter(conf)
 
 end --]]
 
-function get_vconf()
+function ApikeyValidator.get_vconf()
   return vconf
 end
 
