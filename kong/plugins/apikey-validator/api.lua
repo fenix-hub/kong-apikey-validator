@@ -85,7 +85,7 @@ return {
         end
 
         if response.status ~= 200 then
-          return kong.response.exit(response.status, json.decode(response.body))
+          return kong.response.exit(response.status)
         end
 
         local response_body = json.decode(response.body)
