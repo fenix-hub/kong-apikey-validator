@@ -105,10 +105,9 @@ return {
         for j, limit in ipairs(limits) do
           local i = j - 1
           local hash = limits_index .. ":" .. i
-          kong.log(hash,  "p", limit["parameter"])
           redis_client:hset(hash, "p", limit["parameter"])
+          redis_client:hset(hash, "c", 0)
           redis_client:hset(hash, "m", limit["maxValue"])
-          redis_client:hset(hash, "c", limit["currentValue"])
           redis_client:hset(hash, "i", limit["incrementBy"])
         end
         kong.log(limits_index .. ":limits", #limits)
