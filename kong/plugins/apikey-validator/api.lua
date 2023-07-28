@@ -69,8 +69,8 @@ return {
         }
 
         kong.log(self.args.post)
-        kong.log(json.encode(self.args.post))
-        kong.log(self.args.post.serviceId)
+        kong.log(json.decode(self.args.post))
+        kong.log(json.decode(self.args.post).serviceId)
         kong.log(unescape_uri(self.args.post.serviceId))
 
         local body = { serviceId = self.args.post.serviceId, purchaseId = self.args.post.purchaseId }
