@@ -73,7 +73,7 @@ return {
         httpc:set_timeouts(vconf.connect_timeout, vconf.send_timeout, vconf.read_timeout)
         local response, err = httpc:request_uri(vconf.url, {
           method = vconf.method,
-          path = "/apikey/generate",
+          path = "/api-composer/apikey/generate",
           body = json.encode(body),
           headers = headers,
         })
