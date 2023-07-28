@@ -24,6 +24,8 @@ local ApikeyValidator = {
   VERSION = "0.4.0", -- version in X.Y.Z format. Check hybrid-mode compatibility requirements.
 }
 
+local vconf = {}
+
 -- do initialization here, any module level code runs in the 'init_by_lua_block',
 -- before worker processes are forked. So anything you add here will run once,
 -- but be available in all workers.
@@ -69,6 +71,8 @@ end --]]
 
 -- runs in the 'access_by_lua_block'
 function ApikeyValidator:access(conf)
+
+  vconf = conf
 
   -- make sure the request headers contains an APIKey in the X-API-Key header
   local apikey = kong.request.get_header(conf.request_header)
@@ -178,6 +182,10 @@ function ApikeyValidator:header_filter(conf)
   kong.response.set_header(conf.response_header, "this is on the response")
 
 end --]]
+
+function get_vconf()
+  return vconf
+end
 
 
 --[[ runs in the 'body_filter_by_lua_block'

@@ -2,8 +2,7 @@ local http = require "resty.http"
 local json = require "lunajson"
 local redis = require "redis"
 local jwt_decoder = require "kong.plugins.jwt.jwt_parser"
-
-local conf = require "kong.plugins.apikey-validator.schema"
+local handler = require "kong.plugins.apikey-validator.handler"
 
 -- this is a workaround to avoid the error: 405 Method Not Allowed
 local EmptySchema = {}
@@ -32,6 +31,7 @@ return {
     schema = GenerateSchema:new(),
     methods = {
       POST = function(self)
+        local vconf = handler.get_vconf()
 
         -- get the Authorization header from the request
         local auth_header = self.req.headers["Authorization"]
@@ -68,9 +68,9 @@ return {
 
         local body = { serviceId = self.req.params_post.serviceId, purchaseId = self.req.params_post.purchaseId }
 
-        kong.log("Making request " .. conf.method .. " " .. conf.url .. conf.path .. " " .. json.encode(body))
-        local response, err = httpc:request_uri(conf.url, {
-          method = conf.method,
+        kong.log("Making request " .. vconf.method .. " " .. vconf.url .. vconf.path .. " " .. json.encode(body))
+        local response, err = httpc:request_uri(vconf.url, {
+          method = vconf.method,
           path = "/apikey/generate",
           body = json.encode(body),
           headers = headers,
