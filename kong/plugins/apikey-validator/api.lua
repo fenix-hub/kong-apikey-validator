@@ -66,10 +66,7 @@ return {
           ["X-Saatisfied-Forwarded-Query"] = kong.request.get_query(),
         }
 
-        kong.log(json.encode(self.params))
-        kong.log(json.encode(self.args.post))
-
-        local body = { serviceId = self.req.params_post.serviceId, purchaseId = self.req.params_post.purchaseId }
+        local body = { serviceId = self.args.post.serviceId, purchaseId = self.args.post.purchaseId }
 
         kong.log(json.encode(body))
 
