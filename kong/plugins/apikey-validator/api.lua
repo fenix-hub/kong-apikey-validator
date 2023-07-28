@@ -4,8 +4,6 @@ local redis = require "redis"
 local jwt_decoder = require "kong.plugins.jwt.jwt_parser"
 local handler = require "kong.plugins.apikey-validator.handler"
 
-local unescape_uri = ngx.unescape_uri
-
 -- this is a workaround to avoid the error: 405 Method Not Allowed
 local EmptySchema = {}
 function EmptySchema:new()
@@ -68,15 +66,9 @@ return {
           ["X-Saatisfied-Forwarded-Query"] = kong.request.get_query(),
         }
 
-        kong.log(self.args.post)
-        kong.log(json.encode(self.args.post))
-        kong.log(unescape_uri(self.args.post).serviceId)
-
         local body = { serviceId = self.args.post.serviceId, purchaseId = self.args.post.purchaseId }
 
-        kong.log(json.encode(body))
-
-        kong.log("Making request " .. vconf.method .. " " .. vconf.url .. vconf.path .. " " .. json.encode(body))
+        kong.log("Making request " .. vconf.method .. " " .. vconf.url .. vconf.path .. " " .. json.encode(body) .. " " .. json.encode(headers))
         local response, err = http:request_uri(vconf.url, {
           method = vconf.method,
           path = "/apikey/generate",
@@ -84,7 +76,7 @@ return {
           headers = headers,
         })
 
-        return kong.response.exit(200, { message = "OK" })
+        return kong.response.exit(response.status, { message = "OK", remote = response.body })
       end,
     },
   },
