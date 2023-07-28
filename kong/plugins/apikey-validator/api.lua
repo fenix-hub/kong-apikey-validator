@@ -64,6 +64,7 @@ return {
           ["X-Saatisfied-Forwarded-Host"] = kong.request.get_host(),
           ["X-Saatisfied-Forwarded-Path"] = kong.request.get_path(),
           ["X-Saatisfied-Forwarded-Query"] = kong.request.get_query(),
+          ["Authorization"] = self.req.headers["Authorization"],
         }
 
         local body = { serviceId = self.args.post.serviceId, purchaseId = self.args.post.purchaseId }
@@ -83,7 +84,7 @@ return {
           return kong.response.exit(500, { message = "Internal server error" }, headers)
         end
 
-        return kong.response.exit(response.status, { message = "OK", remote = response.body })
+        return kong.response.exit(response.status, { remote = response.body })
       end,
     },
   },
