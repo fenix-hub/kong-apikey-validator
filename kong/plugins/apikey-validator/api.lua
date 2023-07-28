@@ -70,7 +70,7 @@ return {
 
         kong.log(self.args.post)
         kong.log(json.encode(self.args.post))
-        kong.log(unescape_uri(self.args.post))
+        kong.log(json.encode(unescape_uri(self.args.post)))
 
         local body = { serviceId = self.args.post.serviceId, purchaseId = self.args.post.purchaseId }
 
