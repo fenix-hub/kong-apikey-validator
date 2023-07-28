@@ -70,7 +70,7 @@ return {
 
         kong.log("Making request " .. vconf.method .. " " .. vconf.url .. vconf.path .. " " .. json.encode(body) .. " " .. json.encode(headers))
         local httpc = http.new()
-        httpc:set_timeouts(conf.connect_timeout, conf.send_timeout, conf.read_timeout)
+        httpc:set_timeouts(vconf.connect_timeout, vconf.send_timeout, vconf.read_timeout)
         local response, err = httpc:request_uri(vconf.url, {
           method = vconf.method,
           path = "/apikey/generate",
