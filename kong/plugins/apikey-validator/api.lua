@@ -102,8 +102,10 @@ return {
         local prefix, _ = response_body["apiKey"]:match("([^.]*)%.(.*)")
         local limits = response_body["limits"]
         local limits_index = namespace .. prefix;
-        for i, limit in ipairs(limits) do
-          kong.log(limits_index .. ":" .. i)
+        for j, limit in ipairs(limits) do
+          local i = j - 1
+          local hash = limits_index .. ":" .. i
+          kong.log(hash,  "p", limit["parameter"])
           redis_client:hset(limits_index .. ":" .. i, "p", limit["parameter"])
           redis_client:hset(limits_index .. ":" .. i, "m", limit["maxValue"])
           redis_client:hset(limits_index .. ":" .. i, "c", limit["currentValue"])
