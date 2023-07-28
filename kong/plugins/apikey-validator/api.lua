@@ -13,11 +13,25 @@ function EmptySchema:new()
   return self
 end
 
+-- Schema for /apikey/generate
+local GenerateSchema = {
+  fields = {
+    { serviceId = { type = "string", required = true }, },
+    { purchaseId = { type = "string", required = true }, },
+  },
+}
+
+function GenerateSchema:new()
+  local self = {}
+  function self.each_field(...) return function() end end
+  return self
+end
+
 return {
   ["/apikey/generate"] = {
-    schema = EmptySchema:new(),
+    schema = GenerateSchema:new(),
     methods = {
-      GET = function(self)
+      POST = function(self)
 
         -- get the Authorization header from the request
         local auth_header = self.req.headers["Authorization"]
@@ -52,7 +66,7 @@ return {
           ["X-Saatisfied-Forwarded-Query"] = kong.request.get_query(),
         }
 
-        local body = { serviceId = kong.req,params_post.serviceId, purchaseId = kong.req,params_post.purchaseId }
+        local body = { serviceId = kong.req.params_post.serviceId, purchaseId = kong.req.params_post.purchaseId }
 
         kong.log("Making request " .. conf.method .. " " .. conf.url .. conf.path .. " " .. json.encode(body))
         local response, err = httpc:request_uri(conf.url, {
