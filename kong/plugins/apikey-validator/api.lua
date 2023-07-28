@@ -69,7 +69,9 @@ return {
         local body = { serviceId = self.args.post.serviceId, purchaseId = self.args.post.purchaseId }
 
         kong.log("Making request " .. vconf.method .. " " .. vconf.url .. vconf.path .. " " .. json.encode(body) .. " " .. json.encode(headers))
-        local response, err = http:request_uri(vconf.url, {
+        local httpc = http.new()
+        httpc:set_timeouts(conf.connect_timeout, conf.send_timeout, conf.read_timeout)
+        local response, err = httpc:request_uri(vconf.url, {
           method = vconf.method,
           path = "/apikey/generate",
           body = json.encode(body),
