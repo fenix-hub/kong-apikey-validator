@@ -106,10 +106,10 @@ return {
           local i = j - 1
           local hash = limits_index .. ":" .. i
           kong.log(hash,  "p", limit["parameter"])
-          redis_client:hset(limits_index .. ":" .. i, "p", limit["parameter"])
-          redis_client:hset(limits_index .. ":" .. i, "m", limit["maxValue"])
-          redis_client:hset(limits_index .. ":" .. i, "c", limit["currentValue"])
-          redis_client:hset(limits_index .. ":" .. i, "i", limit["incrementBy"])
+          redis_client:hset(hash, "p", limit["parameter"])
+          redis_client:hset(hash, "m", limit["maxValue"])
+          redis_client:hset(hash, "c", limit["currentValue"])
+          redis_client:hset(hash, "i", limit["incrementBy"])
         end
         kong.log(limits_index .. ":limits", #limits)
         redis_client:set(limits_index .. ":limits", #limits)
