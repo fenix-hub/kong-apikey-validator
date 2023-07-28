@@ -104,7 +104,10 @@ return {
         local limits_index = namespace .. prefix;
         for i, limit in ipairs(limits) do
           kong.log(limits_index .. ":" .. i)
-          redis_client:hset(limits_index .. ":" .. i, "p", limit["parameter"], "m", limit["maxValue"], "c", limit["currentValue"], "i", limit["incrementBy"])
+          redis_client:hset(limits_index .. ":" .. i, "p", limit["parameter"])
+          redis_client:hset(limits_index .. ":" .. i, "m", limit["maxValue"])
+          redis_client:hset(limits_index .. ":" .. i, "c", limit["currentValue"])
+          redis_client:hset(limits_index .. ":" .. i, "i", limit["incrementBy"])
         end
         kong.log(limits_index .. ":limits", #limits)
         redis_client:set(limits_index .. ":limits", #limits)
