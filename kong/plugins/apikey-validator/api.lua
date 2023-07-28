@@ -84,7 +84,32 @@ return {
           return kong.response.exit(500, { message = "Internal server error" }, headers)
         end
 
-        return kong.response.exit(response.status, { remote = response.body })
+        if response.status ~= 200 then
+          return kong.response.exit(response.status, json.decode(response.body))
+        end
+
+        local response_body = json.decode(response.body)
+
+        -- connect to redis and set the limits
+        local redis_client = redis.connect(vconf.redis_host, vconf.redis_port)
+        if redis_client:ping() ~= true then
+          kong.log.err("Could not connect to redis")
+          return kong.response.error(500, { message = "Internal server error" }, headers)
+        end
+
+        -- set the limits
+        local namespace = vconf.redis_apikey_namespace;
+        local prefix, _ = response_body["apiKey"]:match("([^.]*)%.(.*)")
+        local limits = response_body["limits"]
+        local limits_index = namespace .. prefix;
+        for i, limit in ipairs(limits) do
+          kong.log(limits_index .. ":" .. i)
+          redis_client:hset(limits_index .. ":" .. i, "p", limit["parameter"], "m", limit["maxValue"], "c", limit["currentValue"], "i", limit["incrementBy"])
+        end
+        kong.log(limits_index .. ":limits", #limits)
+        redis_client:set(limits_index .. ":limits", #limits)
+
+        return kong.response.exit(response.status, json.decode(response.body))
       end,
     },
   },
