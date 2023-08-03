@@ -77,6 +77,7 @@ return {
           path = "/api-composer/apikey/generate",
           body = json.encode(body),
           headers = headers,
+          ssl_verify = false,
         })
 
         if err then
