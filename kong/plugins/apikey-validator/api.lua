@@ -69,7 +69,7 @@ return {
 
         local body = { serviceId = self.args.post.serviceId, purchaseId = self.args.post.purchaseId }
 
-        kong.log("Making request " .. vconf.method .. " " .. vconf.url .. vconf.path .. " " .. json.encode(body) .. " " .. json.encode(headers))
+        kong.log("Making request " .. vconf.method .. " " .. vconf.url .. " " .. json.encode(body) .. " " .. json.encode(headers))
         local httpc = http.new()
         httpc:set_timeouts(vconf.connect_timeout, vconf.send_timeout, vconf.read_timeout)
         local response, err = httpc:request_uri(vconf.url, {
