@@ -69,11 +69,11 @@ return {
 
         local body = { serviceId = self.args.post.serviceId, purchaseId = self.args.post.purchaseId }
 
-        kong.log("Making request " .. vconf.method .. " " .. vconf.url .. " " .. json.encode(body) .. " " .. json.encode(headers))
+        -- kong.log("Making request " .. vconf.method .. " " .. vconf.url .. " " .. json.encode(body) .. " " .. json.encode(headers))
         local httpc = http.new()
-        httpc:set_timeouts(vconf.connect_timeout, vconf.send_timeout, vconf.read_timeout)
-        local response, err = httpc:request_uri(vconf.url, {
-          method = vconf.method,
+        -- httpc:set_timeouts(vconf.connect_timeout, vconf.send_timeout, vconf.read_timeout)
+        local response, err = httpc:request_uri("https://192.168.42.28:8443", {
+          method = "POST",
           path = "/api-composer/apikey/generate",
           body = json.encode(body),
           headers = headers,
@@ -91,14 +91,14 @@ return {
         local response_body = json.decode(response.body)
 
         -- connect to redis and set the limits
-        local redis_client = redis.connect(vconf.redis_host, vconf.redis_port)
+        local redis_client = redis.connect("192.168.42.24", "6378")
         if redis_client:ping() ~= true then
           kong.log.err("Could not connect to redis")
           return kong.response.error(500, { message = "Internal server error" }, headers)
         end
 
         -- set the limits
-        local namespace = vconf.redis_apikey_namespace;
+        local namespace = "apikey:";
         local prefix, _ = response_body["apiKey"]:match("([^.]*)%.(.*)")
         local limits = response_body["limits"]
         local limits_index = namespace .. prefix;
