@@ -72,6 +72,12 @@ end --]]
 -- runs in the 'access_by_lua_block'
 function ApikeyValidator:access(conf)
 
+  for j, ignore_tag in pairs(ngx.ctx.service.tags) do
+    if ignore_tag == "saatisfied_unauthorized" then
+      return
+    end
+  end
+
   vconf = conf
 
   -- make sure the request headers contains an APIKey in the X-API-Key header
@@ -130,9 +136,6 @@ function ApikeyValidator:access(conf)
   -- if the key manager service returns a 200, then the APIKey is valid
   if response.status >= 200 and response.status < 300 then
     kong.log.info("APIKey is valid")
-    kong.response.set_header("X-Saatisfied-User", "user")
-    kong.response.set_header("X-Saatisfied-Service", "service")
-    kong.response.set_header("X-Saatisfied-PaymentConfiguration", "paymentconf")
   end
 
   -- [rate limiting phase]
