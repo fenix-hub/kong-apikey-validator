@@ -83,7 +83,7 @@ function ApikeyValidator:access(conf)
   -- make sure the request headers contains an APIKey in the X-API-Key header
   local apikey = kong.request.get_header(conf.request_header)
   if not apikey then
-    return kong.response.error(401, { message = "No API key found in request" })
+    return kong.response.error(401, "No API key found in request")
   end
 
   -- [validation phase]
@@ -100,17 +100,17 @@ function ApikeyValidator:access(conf)
     ["X-Saatisfied-Forwarded-Query"] = kong.request.get_query(),
   }
 
-  kong.log.debug("Making request " .. conf.method .. " " .. conf.url .. conf.path)
+  kong.log.debug("Making APIKey verification request " .. conf.method .. " " .. conf.url .. conf.path)
   local response, err = httpc:request_uri(conf.url, {
     method = conf.method,
-    path = conf.path,
+    path = conf.verification_path,
     body = json.encode(body),
     headers = headers,
   })
 
   if err then
     kong.log.err("Error: " .. err)
-    return kong.response.error(500, { message = "Internal server error" }, headers)
+    return kong.response.error(500, "Internal server error", headers)
   end
 
   local prefix, _ = apikey:match("([^.]*)%.(.*)")
@@ -121,16 +121,16 @@ function ApikeyValidator:access(conf)
   -- the key might be expired, revoked, etc.
   -- if the key manager service returns a 401, then the APIKey is invalid
   if response.status == 401 then
-    return kong.response.error(401, { message = "API Key expired or revoked" }, headers)
+    return kong.response.error(401, "API Key expired or revoked", headers)
   end
 
   if response.status == 400 then
-    return kong.response.error(400, { message = "API Key not valid" }, headers)
+    return kong.response.error(400, "API Key not valid", headers)
   end
 
   -- if the key manager service returns a 500, then something went wrong
   if response.status == 500 or err then
-    return kong.response.error(500, { message = "Internal server error" }, headers)
+    return kong.response.error(500, "Internal server error", headers)
   end
 
   -- if the key manager service returns a 200, then the APIKey is valid
@@ -138,13 +138,54 @@ function ApikeyValidator:access(conf)
     kong.log.info("APIKey is valid")
   end
 
-  -- [rate limiting phase]
+
+  -- getting APIKey info
+  kong.log.debug("Making APIKey info request.." )
+  local response, err = httpc:request_uri(conf.url, {
+    method = conf.method,
+    path = conf.info_path .. "/" .. prefix,
+    headers = headers,
+  })
+
+  if err then
+    kong.log.err("Error: " .. err)
+    return kong.response.error(500, "Internal server error", headers)
+  end
+
+  if response.status == 404 then
+    return kong.response.error(404, "API Key not found", headers)
+  end
+
+  if response.status == 500 or err then
+    return kong.response.error(500, "Internal server error", headers)
+  end
+
+  if response.status >= 200 and response.status < 300 then
+    kong.log.info("APIKey info received")
+  end
+
+  -- decode the response body and set request headers
+  local apikey_info = json.decode(response.body)
+
+  local saatistied_augmentation_headers = {
+    ["X-Saatisfied-User"] = apikey_info["owner"],
+    ["X-Saatisfied-Service"] = apikey_info["product"],
+    ["X-Saatisfied-Service-Verison"] = "v1",
+    ["X-Saatisfied-Payment-Configuration"] = apikey_info["contract"],
+  }
+
+  for k, v in pairs(saatistied_augmentation_headers) do
+    kong.service.request.set_header(k, v)
+  end
+
+
+  ---------- [rate limiting phase] ------------
 
   -- connect to redis
   local redis_client = redis.connect(conf.redis_host, conf.redis_port)
   if redis_client:ping() ~= true then
     kong.log.err("Could not connect to redis")
-    return kong.response.error(500, { message = "Internal server error" }, headers)
+    return kong.response.error(500, "Internal server error")
   end
 
   local namespace = conf.redis_apikey_namespace;
@@ -167,8 +208,8 @@ function ApikeyValidator:access(conf)
     if tonumber(limit.c) >= tonumber(limit.m) then
       kong.log.info("Rate limit exceeded: " .. limit.p .. " (" .. limit.c .. "/" .. limit.m .. ")")
       -- build some headers related to the rate limiting
-      return kong.response.error(429, { message = "Rate limit exceeded" })
-    -- else apply the rate limiting logic
+      return kong.response.error(429, "Rate limit exceeded")
+      -- else apply the rate limiting logic
     else
       switch(rate_limiting_logics):case(limit.p, limit, redis_client)
     end
@@ -176,6 +217,11 @@ function ApikeyValidator:access(conf)
 
   :: continue ::
 end --]]
+
+
+function ApikeyValidator:response(conf)
+
+end
 
 
 -- runs in the 'header_filter_by_lua_block'

@@ -16,7 +16,8 @@ local schema = {
         fields = {
           { method = { type = "string", default = "POST", one_of = { "POST", "GET", }, }, },
           { url = typedefs.url({ required = true }) },
-          { path = { type = "string" }, },
+          { verification_path = { type = "string" }, },
+          { info_path = { type = "string" }, },
 
           -- redis connection properties, including host, port, user and password
           { redis_host = typedefs.host({ required = true }), },
