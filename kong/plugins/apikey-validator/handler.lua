@@ -100,7 +100,7 @@ function ApikeyValidator:access(conf)
     ["X-Saatisfied-Forwarded-Query"] = kong.request.get_query(),
   }
 
-  kong.log.debug("Making APIKey verification request " .. conf.method .. " " .. conf.url .. conf.path)
+  kong.log.debug("Making APIKey verification request " .. conf.method .. " " .. conf.url)
   local response, err = httpc:request_uri(conf.url, {
     method = conf.method,
     path = conf.verification_path,
