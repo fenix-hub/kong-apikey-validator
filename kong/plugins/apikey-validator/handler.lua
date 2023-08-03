@@ -142,7 +142,7 @@ function ApikeyValidator:access(conf)
   -- getting APIKey info
   kong.log.debug("Making APIKey info request.." )
   local response, err = httpc:request_uri(conf.url, {
-    method = conf.method,
+    method = "GET",
     path = conf.info_path .. "/" .. prefix,
     headers = headers,
   })
