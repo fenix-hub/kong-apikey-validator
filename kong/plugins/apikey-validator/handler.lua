@@ -225,12 +225,12 @@ end
 
 
 -- runs in the 'header_filter_by_lua_block'
-function ApikeyValidator:header_filter(conf)
-
-  -- your custom code here, for example;
-  kong.response.set_header(conf.response_header, "this is on the response")
-
-end --]]
+--function ApikeyValidator:header_filter(conf)
+--
+--  -- your custom code here, for example;
+--  kong.response.set_header(conf.response_header, "this is on the response")
+--
+--end --]]
 
 function ApikeyValidator.get_vconf()
   return vconf
