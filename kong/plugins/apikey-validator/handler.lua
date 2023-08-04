@@ -239,7 +239,7 @@ function ApikeyValidator:response(conf)
   local redis_client = get_redis_client(conf.redis_host, conf.redis_port)
 
   -- [apply rate limiting logics]
-  for limit in kong.ctx.plugin[prefix] do
+  for i, limit in ipairs(kong.ctx.plugin[prefix]) do
     switch(rate_limiting_logics):case(limit.p, limit, redis_client)
   end
 end
