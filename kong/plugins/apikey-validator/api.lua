@@ -61,9 +61,6 @@ return {
         local headers = {
           ["User-Agent"] = "apikey-validator/" .. "1.0.0",
           ["Content-Type"] = "application/json",
-          ["X-Saatisfied-Forwarded-Host"] = kong.request.get_host(),
-          ["X-Saatisfied-Forwarded-Path"] = kong.request.get_path(),
-          ["X-Saatisfied-Forwarded-Query"] = kong.request.get_query(),
           ["Authorization"] = self.req.headers["Authorization"],
         }
 
