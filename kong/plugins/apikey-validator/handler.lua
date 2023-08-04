@@ -24,8 +24,6 @@ local ApikeyValidator = {
   VERSION = "0.4.4", -- version in X.Y.Z format. Check hybrid-mode compatibility requirements.
 }
 
-local _redis_client = nil
-
 -- do initialization here, any module level code runs in the 'init_by_lua_block',
 -- before worker processes are forked. So anything you add here will run once,
 -- but be available in all workers.
@@ -79,9 +77,8 @@ function ApikeyValidator:access(conf)
   end
 
   local service_id = kong.router.get_service().id
-  kong.log(ngx.ctx.service.tags)
-  kong.log(ngx.ctx.service.id)
-  kong.log(service_id)
+  -- kong.log(ngx.ctx.service.tags)
+  -- kong.log(ngx.ctx.service.id)
 
   -- make sure the request headers contains an APIKey in the X-API-Key header
   local apikey = kong.request.get_header(conf.request_header)
@@ -186,7 +183,6 @@ function ApikeyValidator:access(conf)
 
   -- connect to redis
   local redis_client = get_redis_client(conf.redis_host, conf.redis_port)
-  _redis_client = redis_client
 
   local namespace = conf.redis_apikey_namespace;
   local limits_index = namespace .. prefix;
@@ -212,7 +208,8 @@ function ApikeyValidator:access(conf)
     end
   end
 
-  kong.ctx.plugin[prefix] = limits
+  kong.ctx.plugin.prefix = prefix;
+  kong.ctx.plugin.limits[prefix] = limits;
 
   :: continue ::
 end --]]
@@ -222,12 +219,7 @@ function get_vconf()
 end
 
 function get_redis_client(host, port)
-  local redis_client = nil
-  if _redis_client ~= nil then
-    redis_client = _redis_client
-  else
-    redis_client = redis.connect(host, port)
-  end
+  local redis_client = redis.connect(host, port)
   if redis_client:ping() ~= true then
     kong.log.err("Could not connect to redis")
     return kong.response.error(500, "Internal server error")
@@ -238,8 +230,11 @@ end
 function ApikeyValidator:response(conf)
   local redis_client = get_redis_client(conf.redis_host, conf.redis_port)
 
+  local prefix = kong.ctx.plugin.prefix;
+  local limits = kong.ctx.plugin.limits[prefix];
+
   -- [apply rate limiting logics]
-  for i, limit in ipairs(kong.ctx.plugin[prefix]) do
+  for i, limit in ipairs(limits) do
     switch(rate_limiting_logics):case(limit.p, limit, redis_client)
   end
 end
