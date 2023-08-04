@@ -231,7 +231,7 @@ local function get_redis_client(host, port)
   if _redis_client ~= nil then
     redis_client = _redis_client
   else
-    redis_client = redis.connect(conf.redis_host, conf.redis_port)
+    redis_client = redis.connect(host, port)
   end
   return redis_client
 end
