@@ -217,7 +217,7 @@ function ApikeyValidator:access(conf)
   :: continue ::
 end --]]
 
-function get_vconf()
+function ApikeyValidator:get_vconf()
   return vconf
 end
 
