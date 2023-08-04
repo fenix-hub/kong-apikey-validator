@@ -64,7 +64,7 @@ return {
           ["Authorization"] = self.req.headers["Authorization"],
         }
 
-        local body = { serviceId = self.args.post.serviceId, purchaseId = self.args.post.purchaseId }
+        local body = { userId = jwt.claims.uuid, serviceId = self.args.post.serviceId, purchaseId = self.args.post.purchaseId }
 
         -- kong.log("Making request " .. vconf.method .. " " .. vconf.url .. " " .. json.encode(body) .. " " .. json.encode(headers))
         local httpc = http.new()
