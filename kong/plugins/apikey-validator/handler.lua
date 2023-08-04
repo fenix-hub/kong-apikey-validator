@@ -186,11 +186,6 @@ function ApikeyValidator:access(conf)
 
   -- connect to redis
   local redis_client = get_redis_client(conf.redis_host, conf.redis_port)
-
-  if redis_client:ping() ~= true then
-    kong.log.err("Could not connect to redis")
-    return kong.response.error(500, "Internal server error")
-  end
   _redis_client = redis_client
 
   local namespace = conf.redis_apikey_namespace;
@@ -232,6 +227,10 @@ local function get_redis_client(host, port)
     redis_client = _redis_client
   else
     redis_client = redis.connect(host, port)
+  end
+  if redis_client:ping() ~= true then
+    kong.log.err("Could not connect to redis")
+    return kong.response.error(500, "Internal server error")
   end
   return redis_client
 end
