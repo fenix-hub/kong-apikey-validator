@@ -40,6 +40,7 @@ function ApikeyValidator:init_worker()
 end --]]
 
 
+local vconf
 
 --[[ runs in the 'ssl_certificate_by_lua_block'
 -- IMPORTANT: during the `certificate` phase neither `route`, `service`, nor `consumer`
@@ -75,6 +76,8 @@ function ApikeyValidator:access(conf)
       return
     end
   end
+
+  vconf = conf;
 
   local service_id = kong.router.get_service().id
   -- kong.log(ngx.ctx.service.tags)
@@ -209,13 +212,13 @@ function ApikeyValidator:access(conf)
   end
 
   kong.ctx.plugin.prefix = prefix;
-  kong.ctx.plugin.limits[prefix] = limits;
+  kong.ctx.plugin.limits = { [prefix] = limits };
 
   :: continue ::
 end --]]
 
 function get_vconf()
-  return nil
+  return vconf
 end
 
 function get_redis_client(host, port)
