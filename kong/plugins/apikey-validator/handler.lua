@@ -217,11 +217,11 @@ function ApikeyValidator:access(conf)
   :: continue ::
 end --]]
 
-local function get_vconf()
+function get_vconf()
   return nil
 end
 
-local function get_redis_client(host, port)
+function get_redis_client(host, port)
   local redis_client = nil
   if _redis_client ~= nil then
     redis_client = _redis_client
