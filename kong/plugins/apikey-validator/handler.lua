@@ -24,7 +24,7 @@ local ApikeyValidator = {
 -- before worker processes are forked. So anything you add here will run once,
 -- but be available in all workers.
 
-local httpc = http.new()
+local httpc
 
 -- handles more initialization, but AFTER the worker process has been forked/created.
 -- It runs in the 'init_worker_by_lua_block'
@@ -32,6 +32,7 @@ function ApikeyValidator:init_worker()
 
   -- your custom code here
   kong.log.debug("saying hi from the 'init_worker' handler")
+  httpc = http.new()
   httpc:set_timeouts(5000, 10000, 10000)
 
 end --]]
