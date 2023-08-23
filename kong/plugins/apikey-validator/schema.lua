@@ -14,18 +14,19 @@ local schema = {
         -- The 'config' record is the custom part of the plugin schema
         type = "record",
         fields = {
-          { method = { type = "string", default = "POST", one_of = { "POST", "GET", }, }, },
-          { url = typedefs.url({ required = true }) },
-          { verification_path = { type = "string" }, },
+          { validation_method = { type = "string", default = "POST", one_of = { "POST", "GET", }, }, },
+          { validation_url = typedefs.url({ required = true }) },
+          { validation_path = { type = "string" }, },
+          { info_method = { type = "string", default = "GET", one_of = { "POST", "GET", }, }, },
+          { info_url = typedefs.url({ required = true }) },
           { info_path = { type = "string" }, },
 
-          -- redis connection properties, including host, port, user and password
-          { redis_host = typedefs.host({ required = true }), },
-          { redis_port = typedefs.port({ required = true }), },
-          { redis_user = { type = "string", len_min = 0 }, },
-          { redis_password = { type = "string", len_min = 0 }, },
+          { ratelimiter_url = typedefs.url({ required = true }) },
+          { check_method = { type = "string", default = "GET", one_of = { "POST", "GET", }, }, },
+          { check_path = { type = "string" }, },
+          { count_method = { type = "string", default = "POST", one_of = { "POST", "GET", }, }, },
+          { count_path = { type = "string" }, },
 
-          { redis_apikey_namespace = { type = "string", default = "apikey:"}, },
 
           -- timeouts for connecting to the Validator server
           { connect_timeout = { type = "number", default = 5000, }, },

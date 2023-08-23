@@ -21,7 +21,7 @@ local rate_limiting_logics = require "kong.plugins.apikey-validator.rate-limitin
 
 local ApikeyValidator = {
   PRIORITY = 1000, -- set the ApikeyValidator priority, which determines ApikeyValidator execution order
-  VERSION = "0.4.4", -- version in X.Y.Z format. Check hybrid-mode compatibility requirements.
+  VERSION = "0.5.0", -- version in X.Y.Z format. Check hybrid-mode compatibility requirements.
 }
 
 -- do initialization here, any module level code runs in the 'init_by_lua_block',
@@ -95,10 +95,10 @@ function ApikeyValidator:access(conf)
 
   local body = { apiKey = apikey, serviceId = service_id }
 
-  kong.log.debug("Making APIKey verification request " .. conf.method .. " " .. conf.url)
-  local response, err = httpc:request_uri(conf.url, {
-    method = conf.method,
-    path = conf.verification_path,
+  kong.log.debug("Making APIKey verification request " .. conf.validation_method .. " " .. conf.validation_url)
+  local response, err = httpc:request_uri(conf.validation_url, {
+    method = conf.validation_method,
+    path = conf.validation_path,
     body = json.encode(body),
     headers = {
       ["User-Agent"] = "apikey-validator/" .. ApikeyValidator.VERSION,
@@ -144,8 +144,8 @@ function ApikeyValidator:access(conf)
 
   -- getting APIKey info
   kong.log.debug("Making APIKey info request.." )
-  local response, err = httpc:request_uri(conf.url, {
-    method = "GET",
+  local response, err = httpc:request_uri(conf.info_url, {
+    method = conf.info_method,
     path = conf.info_path .. "/" .. prefix,
     headers = headers,
   })
@@ -184,35 +184,33 @@ function ApikeyValidator:access(conf)
 
   ---------- [rate limiting phase] ------------
 
-  -- connect to redis
-  local redis_client = get_redis_client(conf.redis_host, conf.redis_port)
+  kong.log.debug("Making Check limits request.." )
+  local response, err = httpc:request_uri(conf.ratelimiter_url, {
+    method = conf.check_method,
+    path = conf.check_path .. "/" .. prefix,
+    headers = headers,
+  })
 
-  local namespace = conf.redis_apikey_namespace;
-  local limits_index = namespace .. prefix;
-
-  -- call redis cache
-  local limits_amount = redis_client:get(limits_index .. ":limits");
-  kong.log.debug("limits_amount: " .. limits_amount)
-
-  local limits = {};
-  for i = 0, limits_amount-1 do
-    limits[i+1] = redis_client:hgetall(limits_index .. ":" .. i);
-    limits[i+1]["idx"] = limits_index .. ":" .. i;
-  end;
-
-  -- check if the current_value is greater than the max_value
-  -- if so, then the rate limit has been exceeded, and the request should be rejected
-  for i, limit in ipairs(limits) do
-    kong.log.info("limit: " .. i .. " " .. json.encode(limit))
-    if tonumber(limit.c) >= tonumber(limit.m) then
-      kong.log.info("Rate limit exceeded: " .. limit.p .. " (" .. limit.c .. "/" .. limit.m .. ")")
-      -- build some headers related to the rate limiting
-      return kong.response.error(429, "Rate limit exceeded")
-    end
+  if err then
+    kong.log.err("Error: " .. err)
+    return kong.response.error(500, "Internal server error", headers)
   end
 
-  kong.ctx.plugin.prefix = prefix;
-  kong.ctx.plugin.limits = { [prefix] = limits };
+  if response.status == 404 then
+    return kong.response.error(404, "API Key not found", headers)
+  end
+
+  if response.status == 429 then
+    return kong.response.exit(response.status, response.body)
+  end
+
+  if response.status == 500 or err then
+    return kong.response.error(500, "Internal server error", headers)
+  end
+
+  if response.status >= 200 and response.status < 300 then
+    kong.log.info("APIKey info received")
+  end
 
   :: continue ::
 end --]]
@@ -221,25 +219,23 @@ function ApikeyValidator:get_vconf()
   return vconf
 end
 
-function get_redis_client(host, port)
-  local redis_client = redis.connect(host, port)
-  if redis_client:ping() ~= true then
-    kong.log.err("Could not connect to redis")
-    return kong.response.error(500, "Internal server error")
-  end
-  return redis_client
-end
 
 function ApikeyValidator:response(conf)
-  local redis_client = get_redis_client(conf.redis_host, conf.redis_port)
+  -- [[ update counters ]]
+  kong.log.debug("Making Count request.." )
+  local response, err = httpc:request_uri(conf.ratelimiter_url, {
+    method = conf.count_method,
+    path = conf.count_path .. "/" .. prefix,
+    headers = {
+      ["User-Agent"] = "apikey-validator/" .. ApikeyValidator.VERSION,
+      ["Content-Type"] = "application/json",
+    },
+  })
 
-  local prefix = kong.ctx.plugin.prefix;
-  local limits = kong.ctx.plugin.limits[prefix];
-
-  -- [apply rate limiting logics]
-  for i, limit in ipairs(limits) do
-    switch(rate_limiting_logics):case(limit.p, limit, redis_client)
+  if err or response.status == 500 then
+    kong.log.err("Error: " .. err)
   end
+
 end
 
 -- return our ApikeyValidator object
