@@ -20,8 +20,6 @@ local ApikeyValidator = {
   VERSION = "0.5.1", -- version in X.Y.Z format. Check hybrid-mode compatibility requirements.
 }
 
-local curr_prefix = nil
-
 -- do initialization here, any module level code runs in the 'init_by_lua_block',
 -- before worker processes are forked. So anything you add here will run once,
 -- but be available in all workers.
@@ -109,7 +107,6 @@ function ApikeyValidator:access(conf)
   kong.log(curr_prefix)
   local prefix, _ = apikey:match("([^.]*)%.(.*)")
   apikey = nil
-  curr_prefix = prefix
 
   -- the key might be expired, revoked, etc.
   -- if the key manager service returns a 401, then the APIKey is invalid
@@ -220,7 +217,9 @@ function ApikeyValidator:response(conf)
   -- [[ update counters ]]
   kong.log.debug("Making Count request.." )
 
-  local prefix = curr_prefix
+  local apikey = kong.request.get_header(conf.request_header)
+  local prefix, _ = apikey:match("([^.]*)%.(.*)")
+  apikey = nil
 
   httpc = http.new()
   httpc:set_timeouts(5000, 10000, 10000)
