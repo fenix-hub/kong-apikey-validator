@@ -169,10 +169,7 @@ function ApikeyValidator:access(conf)
     ["X-Saatisfied-Payment-Configuration"] = apikey_info["contract"],
   }
 
-  for k, v in pairs(saatistied_augmentation_headers) do
-    kong.service.request.set_header(k, v)
-  end
-
+  kong.request.set_headers(saatisfied_unauthorized)
 
 
   ---------- [rate limiting phase] ------------
@@ -194,7 +191,7 @@ function ApikeyValidator:access(conf)
   end
 
   if response.status == 429 then
-    return kong.response.exit(response.status, response.body)
+    return kong.response.exit(response.status, response.body, response.headers)
   end
 
   if response.status == 500 or err then
