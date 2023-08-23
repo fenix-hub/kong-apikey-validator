@@ -24,16 +24,12 @@ local ApikeyValidator = {
 -- before worker processes are forked. So anything you add here will run once,
 -- but be available in all workers.
 
-local httpc
-
 -- handles more initialization, but AFTER the worker process has been forked/created.
 -- It runs in the 'init_worker_by_lua_block'
 function ApikeyValidator:init_worker()
 
   -- your custom code here
   kong.log.debug("saying hi from the 'init_worker' handler")
-  httpc = http.new()
-  httpc:set_timeouts(5000, 10000, 10000)
 
 end --]]
 
@@ -71,6 +67,9 @@ function ApikeyValidator:access(conf)
       return
     end
   end
+
+  httpc = http.new()
+  httpc:set_timeouts(5000, 10000, 10000)
 
 
   local service_id = kong.router.get_service().id
@@ -217,6 +216,10 @@ end
 function ApikeyValidator:response(conf)
   -- [[ update counters ]]
   kong.log.debug("Making Count request.." )
+
+  httpc = http.new()
+  httpc:set_timeouts(5000, 10000, 10000)
+
   local response, err = httpc:request_uri(conf.ratelimiter_url, {
     method = conf.count_method,
     path = conf.count_path .. "/" .. prefix,
