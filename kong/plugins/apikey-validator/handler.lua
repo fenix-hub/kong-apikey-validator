@@ -146,6 +146,8 @@ function ApikeyValidator:access(conf)
     headers = headers,
   })
 
+  kong.log(response.body)
+
   if err then
     kong.log.err("Error: " .. err)
     return kong.response.error(500, "Internal server error", headers)
