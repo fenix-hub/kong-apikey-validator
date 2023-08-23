@@ -32,12 +32,9 @@ function ApikeyValidator:init_worker()
 
   -- your custom code here
   kong.log.debug("saying hi from the 'init_worker' handler")
-  httpc:set_timeouts(conf.connect_timeout, conf.send_timeout, conf.read_timeout)
+  httpc:set_timeouts(5000, 10000, 10000)
 
 end --]]
-
-
-local vconf
 
 --[[ runs in the 'ssl_certificate_by_lua_block'
 -- IMPORTANT: during the `certificate` phase neither `route`, `service`, nor `consumer`
@@ -74,7 +71,6 @@ function ApikeyValidator:access(conf)
     end
   end
 
-  vconf = conf;
 
   local service_id = kong.router.get_service().id
   -- kong.log(ngx.ctx.service.tags)

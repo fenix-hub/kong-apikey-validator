@@ -27,12 +27,6 @@ local schema = {
           { count_method = { type = "string", default = "POST", one_of = { "POST", "GET", }, }, },
           { count_path = { type = "string" }, },
 
-
-          -- timeouts for connecting to the Validator server
-          { connect_timeout = { type = "number", default = 5000, }, },
-          { send_timeout = { type = "number", default = 10000, }, },
-          { read_timeout = {  type = "number", default = 10000, }, },
-
           -- a standard defined field (typedef), with some customizations
           { request_header = typedefs.header_name {
               required = true,
