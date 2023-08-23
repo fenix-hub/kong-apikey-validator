@@ -237,6 +237,8 @@ function ApikeyValidator:response(conf)
     kong.log.err("Error: " .. err)
   end
 
+  kong.response.set_header(response.headers)
+
 end
 
 -- return our ApikeyValidator object
