@@ -169,7 +169,7 @@ function ApikeyValidator:access(conf)
     ["X-Saatisfied-Payment-Configuration"] = apikey_info["contract"],
   }
 
-  kong.service.request.set_headers(saatisfied_unauthorized)
+  kong.service.request.set_headers(saatistied_augmentation_headers)
 
 
   ---------- [rate limiting phase] ------------
