@@ -14,14 +14,10 @@
 
 local http = require "resty.http"
 local json = require "lunajson"
-local redis = require "redis"
-
-local switch = require "kong.plugins.apikey-validator.switch"
-local rate_limiting_logics = require "kong.plugins.apikey-validator.rate-limiting"
 
 local ApikeyValidator = {
   PRIORITY = 1000, -- set the ApikeyValidator priority, which determines ApikeyValidator execution order
-  VERSION = "0.5.0", -- version in X.Y.Z format. Check hybrid-mode compatibility requirements.
+  VERSION = "0.5.1", -- version in X.Y.Z format. Check hybrid-mode compatibility requirements.
 }
 
 -- do initialization here, any module level code runs in the 'init_by_lua_block',
