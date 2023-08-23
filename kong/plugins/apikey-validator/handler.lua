@@ -91,7 +91,7 @@ function ApikeyValidator:access(conf)
 
   local body = { apiKey = apikey, serviceId = service_id }
 
-  kong.log.debug("Making APIKey verification request " .. conf.validation_method .. " " .. conf.validation_url)
+  kong.log("Making APIKey verification request " .. conf.validation_method .. " " .. conf.validation_url .. conf.validation_path )
   local response, err = httpc:request_uri(conf.validation_url, {
     method = conf.validation_method,
     path = conf.validation_path,
@@ -107,7 +107,7 @@ function ApikeyValidator:access(conf)
     return kong.response.error(500, "Internal server error", headers)
   end
 
-  kong.log.debug("Response: " .. response.body .. " " .. response.status)
+  kong.log("Response: " .. response.body .. " " .. response.status)
 
   local prefix, _ = apikey:match("([^.]*)%.(.*)")
   apikey = nil
@@ -139,7 +139,7 @@ function ApikeyValidator:access(conf)
 
 
   -- getting APIKey info
-  kong.log.debug("Making APIKey info request.." )
+  kong.log("Making APIKey info request.. " .. conf.info_method .. " " .. conf.info_url .. conf.info_path .. "/" .. prefix )
   local response, err = httpc:request_uri(conf.info_url, {
     method = conf.info_method,
     path = conf.info_path .. "/" .. prefix,
@@ -180,7 +180,7 @@ function ApikeyValidator:access(conf)
 
   ---------- [rate limiting phase] ------------
 
-  kong.log.debug("Making Check limits request.." )
+  kong.log("Making Check limits request.." .. conf.check_method .. " " .. conf.ratelimiter_url .. conf.check_path .. "/" .. prefix )
   local response, err = httpc:request_uri(conf.ratelimiter_url, {
     method = conf.check_method,
     path = conf.check_path .. "/" .. prefix,
