@@ -205,11 +205,6 @@ function ApikeyValidator:access(conf)
   :: continue ::
 end --]]
 
-function ApikeyValidator:get_vconf()
-  return vconf
-end
-
-
 function ApikeyValidator:response(conf)
   -- [[ update counters ]]
   kong.log.debug("Making Count request.." )
