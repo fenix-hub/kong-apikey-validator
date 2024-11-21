@@ -12,8 +12,10 @@
 
 -- TODO: user https://github.com/Kong/kong/blob/master/kong/plugins/key-auth/handler.lua as a reference
 
-local httpc = require("resty.http").new()
+local http = require "resty.http"
 local json = require "lunajson"
+
+local httpc = http.new()
 
 local ApikeyValidator = {
   PRIORITY = 1000, -- set the ApikeyValidator priority, which determines ApikeyValidator execution order
