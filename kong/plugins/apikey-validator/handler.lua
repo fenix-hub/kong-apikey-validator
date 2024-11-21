@@ -15,7 +15,7 @@
 local http = require "resty.http"
 local json = require "lunajson"
 
-local httpc = http.new()
+local httpc
 
 local ApikeyValidator = {
   PRIORITY = 1000, -- set the ApikeyValidator priority, which determines ApikeyValidator execution order
@@ -32,6 +32,7 @@ function ApikeyValidator:init_worker()
 
   -- your custom code here
   kong.log.debug("saying hi from the 'init_worker' handler")
+  httpc = http.new()
   httpc:set_timeouts(5000, 10000, 10000)
 
 end --]]
