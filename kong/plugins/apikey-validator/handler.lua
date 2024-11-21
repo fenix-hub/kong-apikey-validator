@@ -17,7 +17,7 @@ local json = require "lunajson"
 
 local ApikeyValidator = {
   PRIORITY = 1000, -- set the ApikeyValidator priority, which determines ApikeyValidator execution order
-  VERSION = "0.5.1", -- version in X.Y.Z format. Check hybrid-mode compatibility requirements.
+  VERSION = "1.0.0", -- version in X.Y.Z format. Check hybrid-mode compatibility requirements.
 }
 
 -- do initialization here, any module level code runs in the 'init_by_lua_block',
@@ -87,9 +87,9 @@ function ApikeyValidator:access(conf)
   local body = { apiKey = apikey, serviceId = service_id }
 
   kong.log("Making APIKey verification request " .. conf.validation_method .. " " .. conf.validation_url .. conf.validation_path )
-  local response, err = httpc:request_uri(conf.validation_url, {
+  local response, err = httpc:request_uri({
     method = conf.validation_method,
-    path = conf.validation_path,
+    path = conf.validation_url .. conf.validation_path,
     body = json.encode(body),
     headers = {
       ["User-Agent"] = "apikey-validator/" .. ApikeyValidator.VERSION,
@@ -104,7 +104,6 @@ function ApikeyValidator:access(conf)
 
   kong.log("Response: " .. response.body .. " " .. response.status)
 
-  kong.log(curr_prefix)
   local prefix, _ = apikey:match("([^.]*)%.(.*)")
   apikey = nil
 
@@ -135,9 +134,9 @@ function ApikeyValidator:access(conf)
 
   -- getting APIKey info
   kong.log("Making APIKey info request.. " .. conf.info_method .. " " .. conf.info_url .. conf.info_path .. "/" .. prefix )
-  local response, err = httpc:request_uri(conf.info_url, {
+  local response, err = httpc:request_uri({
     method = conf.info_method,
-    path = conf.info_path .. "/" .. prefix,
+    path = conf.info_url .. conf.info_path .. "/" .. prefix,
     headers = headers,
   })
 
@@ -175,9 +174,9 @@ function ApikeyValidator:access(conf)
   ---------- [rate limiting phase] ------------
 
   kong.log("Making Check limits request.." .. conf.check_method .. " " .. conf.ratelimiter_url .. conf.check_path .. "/" .. prefix )
-  local response, err = httpc:request_uri(conf.ratelimiter_url, {
+  local response, err = httpc:request_uri({
     method = conf.check_method,
-    path = conf.check_path .. "/" .. prefix,
+    path = conf.ratelimiter_url .. conf.check_path .. "/" .. prefix,
     headers = headers,
   })
 
@@ -216,9 +215,9 @@ function ApikeyValidator:response(conf)
   httpc = http.new()
   httpc:set_timeouts(5000, 10000, 10000)
 
-  local response, err = httpc:request_uri(conf.ratelimiter_url, {
-    method = conf.count_method,
-    path = conf.count_path .. "/" .. prefix,
+  local response, err = httpc:request_uri({
+    method =  conf.count_method,
+    path = conf.ratelimiter_url .. conf.count_path .. "/" .. prefix,
     headers = {
       ["User-Agent"] = "apikey-validator/" .. ApikeyValidator.VERSION,
       ["Content-Type"] = "application/json",
