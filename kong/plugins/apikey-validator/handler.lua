@@ -215,6 +215,9 @@ function ApikeyValidator:response(conf)
   apikey = nil
 
   local countlimit_url = tostring(conf.ratelimiter_url) .. tostring(conf.count_path) .. "/" .. prefix
+  
+  local httpc = http.new()
+  httpc:set_timeouts(5000, 10000, 10000)
   local response, err = httpc:request_uri({
     method =  conf.count_method,
     headers = {
