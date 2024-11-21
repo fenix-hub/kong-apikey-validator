@@ -86,7 +86,7 @@ function ApikeyValidator:access(conf)
   local httpc = http.new()
   httpc:set_timeouts(5000, 10000, 10000)
 
-  local validation_url = tostring(conf.validation_url) .. validation_path
+  local validation_url = tostring(conf.validation_url) .. conf.validation_path
   kong.log("Making APIKey verification request " .. conf.validation_method .. " " .. validation_url )
   local response, err = httpc:request_uri(validation_url, {
     method = conf.validation_method,
@@ -133,8 +133,8 @@ function ApikeyValidator:access(conf)
 
 
   -- getting APIKey info
-  kong.log("Making APIKey info request.. " .. conf.info_method .. " " .. conf.info_url .. conf.info_path .. "/" .. prefix )
   local info_url = tostring(conf.info_url) .. tostring(conf.info_path) .. "/" .. tostring(prefix)
+  kong.log("Making APIKey info request.. " .. conf.info_method .. " " .. info_url )
   local response, err = httpc:request_uri(info_url, {
     method = conf.info_method,
     headers = headers,
