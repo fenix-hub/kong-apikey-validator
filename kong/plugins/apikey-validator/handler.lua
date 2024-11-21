@@ -218,7 +218,7 @@ function ApikeyValidator:response(conf)
   
   local httpc = http.new()
   httpc:set_timeouts(5000, 10000, 10000)
-  local response, err = httpc:request_uri({
+  local response, err = httpc:request_uri(countlimit_url, {
     method =  conf.count_method,
     headers = {
       ["User-Agent"] = "apikey-validator/" .. ApikeyValidator.VERSION,
