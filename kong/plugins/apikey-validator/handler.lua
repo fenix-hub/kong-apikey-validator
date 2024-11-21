@@ -73,9 +73,11 @@ function ApikeyValidator:access(conf)
   -- kong.log(ngx.ctx.service.tags)
   -- kong.log(ngx.ctx.service.id)
 
+  local unauthorized_header = conf.response_header .. "-Unauthorized"
   -- make sure the request headers contains an APIKey in the X-API-Key header
   local apikey = kong.request.get_header(conf.request_header)
   if not apikey then
+    kong.response.set_header(unauthorized_header, "401; No API key found in request")
     return kong.response.error(401, "No API key found in request")
   end
 
@@ -107,24 +109,28 @@ function ApikeyValidator:access(conf)
   local prefix, _ = apikey:match("([^.]*)%.(.*)")
   apikey = nil
 
-  -- the key might be expired, revoked, etc.
-  -- if the key manager service returns a 401, then the APIKey is invalid
-  if response.status == 400 then
-    return kong.response.error(400, "API Key not valid", headers)
-  end
-
-  if response.status == 401 then
-    return kong.response.error(401, "API Key expired or revoked", headers)
-  end
-
-  if response.status == 403 then
-    return kong.response.error(403, "API Key not authorized", headers)
-  end
-
   -- if the key manager service returns a 500, then something went wrong
   if response.status >= 500 or err then
     return kong.response.error(500, "Internal server error", headers)
   end
+  
+  -- the key might be expired, revoked, etc.
+  -- if the key manager service returns a 401, then the APIKey is invalid
+  if response.status == 400 then
+    kong.response.set_header(unauthorized_header, "400; API Key not valid")
+    return kong.response.error(400, "API Key not valid", headers)
+  end
+
+  if response.status == 401 then
+    kong.response.set_header(unauthorized_header, "401; API Key expired or revoked")
+    return kong.response.error(401, "API Key expired or revoked", headers)
+  end
+
+  if response.status == 403 then
+    kong.response.set_header(unauthorized_header, "403; API Key not authorized")
+    return kong.response.error(403, "API Key not authorized", headers)
+  end
+
 
   -- if the key manager service returns a 200, then the APIKey is valid
   if response.status >= 200 and response.status < 300 then
@@ -142,17 +148,14 @@ function ApikeyValidator:access(conf)
 
   kong.log(response.body)
 
-  if err then
+  if response.status == 500 or err then
     kong.log.err("Error: " .. err)
     return kong.response.error(500, "Internal server error", headers)
   end
 
   if response.status == 404 then
+    kong.response.set_header(unauthorized_header, "404; API Key not found")
     return kong.response.error(404, "API Key not found", headers)
-  end
-
-  if response.status == 500 or err then
-    return kong.response.error(500, "Internal server error", headers)
   end
 
   if response.status >= 200 and response.status < 300 then
@@ -180,22 +183,21 @@ function ApikeyValidator:access(conf)
     headers = headers,
   })
 
-  if err then
+  if response.status == 500 or err then
     kong.log.err("Error: " .. err)
     return kong.response.error(500, "Internal server error", headers)
   end
 
   if response.status == 404 then
+    kong.response.set_header(unauthorized_header, "404; API Key not found")
     return kong.response.error(404, "API Key not found", headers)
   end
 
   if response.status == 429 then
+    kong.response.set_header(unauthorized_header, "429; Rate limit exceeded")
     return kong.response.exit(response.status, response.body, response.headers)
   end
 
-  if response.status == 500 or err then
-    return kong.response.error(500, "Internal server error", headers)
-  end
 
   if response.status >= 200 and response.status < 300 then
     kong.log.info("APIKey info received")
