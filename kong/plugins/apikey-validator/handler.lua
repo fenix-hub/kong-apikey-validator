@@ -12,7 +12,7 @@
 
 -- TODO: user https://github.com/Kong/kong/blob/master/kong/plugins/key-auth/handler.lua as a reference
 
-local http = require "resty.http"
+local httpc = require("resty.http").new()
 local json = require "lunajson"
 
 local ApikeyValidator = {
@@ -30,6 +30,7 @@ function ApikeyValidator:init_worker()
 
   -- your custom code here
   kong.log.debug("saying hi from the 'init_worker' handler")
+  httpc:set_timeouts(5000, 10000, 10000)
 
 end --]]
 
@@ -68,10 +69,6 @@ function ApikeyValidator:access(conf)
     end
   end
 
-  httpc = http.new()
-  httpc:set_timeouts(5000, 10000, 10000)
-
-
   local service_id = kong.router.get_service().id
   -- kong.log(ngx.ctx.service.tags)
   -- kong.log(ngx.ctx.service.id)
@@ -87,9 +84,10 @@ function ApikeyValidator:access(conf)
   local body = { apiKey = apikey, serviceId = service_id }
 
   kong.log("Making APIKey verification request " .. conf.validation_method .. " " .. conf.validation_url .. conf.validation_path )
-  local response, err = httpc:request_uri({
+  local validation_url = tostring(conf.validation_url)
+  local validation_path = tostring(conf.validation_path)
+  local response, err = httpc:request_uri(validation_url .. validation_path, {
     method = conf.validation_method,
-    path = conf.validation_url .. conf.validation_path,
     body = json.encode(body),
     headers = {
       ["User-Agent"] = "apikey-validator/" .. ApikeyValidator.VERSION,
@@ -134,9 +132,9 @@ function ApikeyValidator:access(conf)
 
   -- getting APIKey info
   kong.log("Making APIKey info request.. " .. conf.info_method .. " " .. conf.info_url .. conf.info_path .. "/" .. prefix )
-  local response, err = httpc:request_uri({
+  local info_url = tostring(conf.info_url) .. tostring(conf.info_path) .. "/" .. tostring(prefix)
+  local response, err = httpc:request_uri(info_url, {
     method = conf.info_method,
-    path = conf.info_url .. conf.info_path .. "/" .. prefix,
     headers = headers,
   })
 
@@ -173,10 +171,10 @@ function ApikeyValidator:access(conf)
 
   ---------- [rate limiting phase] ------------
 
-  kong.log("Making Check limits request.." .. conf.check_method .. " " .. conf.ratelimiter_url .. conf.check_path .. "/" .. prefix )
-  local response, err = httpc:request_uri({
+  local ratelimiting_url = tostring(conf.ratelimiter_url) .. tostring(conf.check_path) .. "/" .. prefix
+  kong.log("Making Check limits request.." .. conf.check_method .. " " .. ratelimiting_url)
+  local response, err = httpc:request_uri(ratelimiting_url, {
     method = conf.check_method,
-    path = conf.ratelimiter_url .. conf.check_path .. "/" .. prefix,
     headers = headers,
   })
 
@@ -212,12 +210,9 @@ function ApikeyValidator:response(conf)
   local prefix, _ = apikey:match("([^.]*)%.(.*)")
   apikey = nil
 
-  httpc = http.new()
-  httpc:set_timeouts(5000, 10000, 10000)
-
+  local countlimit_url = tostring(conf.ratelimiter_url) .. tostring(conf.count_path) .. "/" .. prefix
   local response, err = httpc:request_uri({
     method =  conf.count_method,
-    path = conf.ratelimiter_url .. conf.count_path .. "/" .. prefix,
     headers = {
       ["User-Agent"] = "apikey-validator/" .. ApikeyValidator.VERSION,
       ["Content-Type"] = "application/json",
