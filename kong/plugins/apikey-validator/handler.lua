@@ -220,10 +220,10 @@ function ApikeyValidator:response(conf)
     content_length = 0
   end
 
-  local body = [
+  local body = {
     { parameter = "REQUEST_SIZE", amount = content_length },
     { parameter = "CALL", amount = 1 }, 
-  ]
+  }
 
   local countlimit_url = tostring(conf.ratelimiter_url) .. tostring(conf.count_path) .. "/" .. prefix
   local httpc = http.new()
