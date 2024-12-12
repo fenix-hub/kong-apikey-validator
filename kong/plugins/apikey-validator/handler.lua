@@ -208,7 +208,7 @@ end --]]
 
 function ApikeyValidator:response(conf)
   -- [[ update counters ]]
-  kong.log.debug("Making Count request.." )
+  kong.log("Making Count request.." )
 
   local apikey = kong.request.get_header(conf.request_header)
   local prefix, _ = apikey:match("([^.]*)%.(.*)")
@@ -224,6 +224,8 @@ function ApikeyValidator:response(conf)
     { parameter = "REQUEST_SIZE", amount = content_length },
     { parameter = "CALL", amount = 1 }, 
   }
+
+  kong.log('Counting >> ' .. json.encode(body))
 
   local countlimit_url = tostring(conf.ratelimiter_url) .. tostring(conf.count_path) .. "/" .. prefix
   local httpc = http.new()
