@@ -219,6 +219,8 @@ function ApikeyValidator:response(conf)
   if not content_length then
     content_length = 0
   end
+  -- make sure that content_length is a number
+  content_length = tonumber(content_length)
 
   local body = {
     { parameter = "REQUEST_SIZE", amount = content_length },
