@@ -215,7 +215,7 @@ function ApikeyValidator:response(conf)
   apikey = nil
 
   -- get Content Length header
-  local content_length = kong.response.get_header("Content-Length")
+  local content_length = kong.request.get_header("Content-Length")
   if not content_length then
     content_length = 0
   end
