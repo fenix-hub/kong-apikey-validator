@@ -214,12 +214,23 @@ function ApikeyValidator:response(conf)
   local prefix, _ = apikey:match("([^.]*)%.(.*)")
   apikey = nil
 
+  -- get Content Length header
+  local content_length = kong.response.get_header("Content-Length")
+  if not content_length then
+    content_length = 0
+  end
+
+  local body = [
+    { parameter = "REQUEST_SIZE", amount = content_length },
+    { parameter = "CALL", amount = 1 }, 
+  ]
+
   local countlimit_url = tostring(conf.ratelimiter_url) .. tostring(conf.count_path) .. "/" .. prefix
-  
   local httpc = http.new()
   httpc:set_timeouts(5000, 10000, 10000)
   local response, err = httpc:request_uri(countlimit_url, {
     method =  conf.count_method,
+    body = json.encode(body),
     headers = {
       ["User-Agent"] = "apikey-validator/" .. ApikeyValidator.VERSION,
       ["Content-Type"] = "application/json",
